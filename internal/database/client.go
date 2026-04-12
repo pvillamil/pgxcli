@@ -145,6 +145,13 @@ func (c *Client) GetHost() string {
 	return c.Executor.Host
 }
 
+func (c *Client) Ping(ctx context.Context) error {
+	if !c.IsConnected() {
+		return fmt.Errorf("not connected to any database")
+	}
+	return c.Executor.Ping(ctx)
+}
+
 func (c *Client) Close(ctx context.Context) error {
 	if c.Executor != nil {
 		return c.Executor.Close(ctx)
