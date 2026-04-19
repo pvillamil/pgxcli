@@ -2,6 +2,7 @@ package cliio
 
 import (
 	"errors"
+	"strings"
 	"syscall"
 	"testing"
 
@@ -43,4 +44,40 @@ func Test_waitIgnoringInterrupt_ReturnOtherError(t *testing.T) {
 
 	err := waitIgnoringInterrupt(fw)
 	assert.Equal(t, someErr, err)
+}
+
+func TestSetPagerMode(t *testing.T) {
+	p := &PgxPrinter{}
+
+	assert.NoError(t, p.SetPagerMode("AUTO"))
+	assert.Equal(t, PagerModeAuto, p.pagerMode)
+
+	assert.NoError(t, p.SetPagerMode("always"))
+	assert.Equal(t, PagerModeAlways, p.pagerMode)
+
+	assert.NoError(t, p.SetPagerMode("never"))
+	assert.Equal(t, PagerModeNever, p.pagerMode)
+
+	err := p.SetPagerMode("invalid")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid pager mode")
+}
+
+func TestShouldUsePager(t *testing.T) {
+	basePrinter := &PgxPrinter{
+		isTerminal:     true,
+		pagerSupported: true,
+		terminalHeight: 10,
+	}
+
+	basePrinter.pagerMode = PagerModeNever
+	assert.False(t, basePrinter.shouldUsePager(strings.Repeat("a", 10000)))
+
+	basePrinter.pagerMode = PagerModeAlways
+	assert.True(t, basePrinter.shouldUsePager("small output"))
+
+	basePrinter.pagerMode = PagerModeAuto
+	assert.False(t, basePrinter.shouldUsePager("small output"))
+	assert.True(t, basePrinter.shouldUsePager(strings.Repeat("a", autoPagerMinBytes)))
+	assert.True(t, basePrinter.shouldUsePager(strings.Repeat("line\n", 10)))
 }
