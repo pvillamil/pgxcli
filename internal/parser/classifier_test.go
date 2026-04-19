@@ -26,6 +26,7 @@ func TestCommandType(t *testing.T) {
 		{"Select Function", "SELECT now()", "QUERY"},
 		{"Select Generate Series", "SELECT * FROM generate_series(1,10)", "QUERY"},
 		{"Select Literal", "SELECT 1", "QUERY"},
+		{"Select Into", "SELECT 1 INTO temp_table", "EXECUTE"},
 		{"Table Keyword", "TABLE users", "QUERY"},
 		// {"Values Alias", "VALUES (1,2) AS t(a,b)", "QUERY"},
 		{"Explain Analyze", "EXPLAIN ANALYZE SELECT * FROM users", "QUERY"},
@@ -92,6 +93,7 @@ func TestCommandType(t *testing.T) {
 		{"Returning Expression Regression", "INSERT INTO users(name) VALUES('a') RETURNING 1+1", "QUERY"},
 		{"Explain Analyze Regression", "EXPLAIN ANALYZE SELECT 1", "QUERY"},
 		{"Values Regression", "VALUES (1)", "QUERY"},
+		{"Mixed Multi Statement", "SELECT 1; INSERT INTO users(name) VALUES('a')", "EXECUTE"},
 
 		// Invalid / Unknown
 		{"Invalid", "NOT A VALID SQL", "INVALID"},
