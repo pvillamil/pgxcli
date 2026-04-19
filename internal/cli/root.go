@@ -16,8 +16,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "0.1.0"
-var osUser = osUsername()
+var (
+	version = "0.1.0"
+	osUser  = osUsername()
+)
 
 func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 	var (
@@ -63,34 +65,18 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 		},
 
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			var argDB string
-			var argUser string
-			if len(args) > 0 {
-				argDB = args[0]
-			}
-			if len(args) > 1 {
-				argUser = args[1]
-			}
+			argDB, argUser := parsePositionalDBAndUser(args)
 
 			if bool(interactiveConnFlag) {
 				// In interactive mode, flags / args are used as defaults
 				// User can overrid them in the form
 				// Priority is flag, arg, env, default
-				var formUser, formDB string
+				var formUser string
 				var formHost, formPort string
-				formDB = string(dbNameFlag)
-				if formDB == "" {
-					formDB = argDB
-				}
+				formDB := firstNonEmpty(string(dbNameFlag), argDB)
 				// TODO: implement getDefaultDB
 
-				formUser = string(usernameFlag)
-				if formUser == "" {
-					formUser = argUser
-				}
-				if formUser == "" {
-					formUser = getDefaultUser()
-				}
+				formUser = firstNonEmpty(string(usernameFlag), argUser, getDefaultUser())
 
 				if cmd.Flags().Changed("host") {
 					formHost = string(hostFlag)
@@ -110,8 +96,7 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 				finalPassword = connValues.Password // might be empty
 				if connValues.Port != "" {
 					// ignoring error since the form validation ensures it's a valid port number
-					portNum, _ := strconv.Atoi(connValues.Port)
-					finalPort = uint16(portNum)
+					finalPort = mustParsePort(connValues.Port)
 				}
 			} else {
 				// non interactive mode, resolve database and user from flags and args
@@ -156,11 +141,9 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 				if bool(forcePromptFlag) && finalPassword == "" {
 					// Force prompt for password
 					// TODO: Implement secure passowrd input
-					var pwd string
-					fmt.Print("Password: ")
-					_, err := fmt.Scanln(&pwd)
-					if err != nil {
-						return err
+					pwd, promptErr := promptPassword()
+					if promptErr != nil {
+						return promptErr
 					}
 					finalPassword = pwd
 				}
@@ -182,9 +165,7 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 				if connErr != nil {
 					if shouldAskForPassword(connErr, bool(neverPromptFlag)) {
 						cliCtx.Logger.Debug("Connection failed, prompting for password")
-						var pwd string
-						fmt.Print("Password: ")
-						_, err := fmt.Scanln(&pwd)
+						pwd, err := promptPassword()
 						if err != nil {
 							return err
 						}
@@ -299,6 +280,33 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func parsePositionalDBAndUser(args []string) (string, string) {
+	var db string
+	var user string
+	if len(args) > 0 {
+		db = args[0]
+	}
+	if len(args) > 1 {
+		user = args[1]
+	}
+	return db, user
+}
+
+func promptPassword() (string, error) {
+	var pwd string
+	fmt.Print("Password: ")
+	_, err := fmt.Scanln(&pwd)
+	if err != nil {
+		return "", err
+	}
+	return pwd, nil
+}
+
+func mustParsePort(port string) uint16 {
+	portNum, _ := strconv.Atoi(port)
+	return uint16(portNum)
 }
 
 // getDefaultUser gets the default username
