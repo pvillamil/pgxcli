@@ -93,74 +93,49 @@ func hasToken(sql string, token string) bool {
 }
 
 func classifyWithAST(sql string) string {
-	tree, err := pg_query.Parse(sql)
-	if err != nil {
-		return commandTypeInvalid
-	}
+    tree, err := pg_query.Parse(sql)
+    if err != nil {
+        return commandTypeInvalid
+    }
+    if len(tree.Stmts) == 0 {
+        return commandTypeInvalid
+    }
 
-	if len(tree.Stmts) == 0 {
-		return commandTypeInvalid
-	}
+    for _, stmt := range tree.Stmts {
+        if nodeWrites(stmt.Stmt.Node) {
+            return commandTypeExecute
+        }
+    }
+    return commandTypeQuery
+}
 
-	hasWrite := false
-
-	for _, stmt := range tree.Stmts {
-		stmtWrites := false
-		switch node := stmt.Stmt.Node.(type) {
-
-		case *pg_query.Node_SelectStmt:
-			// Detect SELECT INTO (writes data)
-			if node.SelectStmt.IntoClause != nil {
-				stmtWrites = true
-			}
-
-		case *pg_query.Node_InsertStmt:
-			if len(node.InsertStmt.ReturningList) == 0 {
-				stmtWrites = true
-			}
-
-		case *pg_query.Node_UpdateStmt:
-			if len(node.UpdateStmt.ReturningList) == 0 {
-				stmtWrites = true
-			}
-
-		case *pg_query.Node_DeleteStmt:
-			if len(node.DeleteStmt.ReturningList) == 0 {
-				stmtWrites = true
-			}
-
-		case *pg_query.Node_VariableShowStmt,
-			*pg_query.Node_ExplainStmt,
-			*pg_query.Node_ExecuteStmt:
-			stmtWrites = false // safe
-
-		case *pg_query.Node_CreateStmt,
-			*pg_query.Node_AlterTableStmt,
-			*pg_query.Node_DropStmt,
-			*pg_query.Node_TruncateStmt,
-			*pg_query.Node_RenameStmt:
-			stmtWrites = true
-
-		case *pg_query.Node_CopyStmt:
-			stmtWrites = node.CopyStmt.IsFrom
-
-		case *pg_query.Node_VariableSetStmt:
-			stmtWrites = true
-
-		default:
-			stmtWrites = true
-		}
-
-		if stmtWrites {
-			hasWrite = true
-			break
-		}
-	}
-
-	if hasWrite {
-		return commandTypeExecute
-	}
-	return commandTypeQuery
+//nolint:cyclop // dispatch table over a closed AST node set; cases are irreducible
+func nodeWrites(node any) bool {
+    switch n := node.(type) {
+    case *pg_query.Node_SelectStmt:
+        return n.SelectStmt.IntoClause != nil
+    case *pg_query.Node_InsertStmt:
+        return len(n.InsertStmt.ReturningList) == 0
+    case *pg_query.Node_UpdateStmt:
+        return len(n.UpdateStmt.ReturningList) == 0
+    case *pg_query.Node_DeleteStmt:
+        return len(n.DeleteStmt.ReturningList) == 0
+    case *pg_query.Node_VariableShowStmt,
+        *pg_query.Node_ExplainStmt,
+        *pg_query.Node_ExecuteStmt:
+        return false
+    case *pg_query.Node_CreateStmt,
+        *pg_query.Node_AlterTableStmt,
+        *pg_query.Node_DropStmt,
+        *pg_query.Node_TruncateStmt,
+        *pg_query.Node_RenameStmt,
+        *pg_query.Node_VariableSetStmt:
+        return true
+    case *pg_query.Node_CopyStmt:
+        return n.CopyStmt.IsFrom
+    default:
+        return true
+    }
 }
 
 // IsQuery returns true if the SQL statement is a read-only query.
