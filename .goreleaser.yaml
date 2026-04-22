@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+# Centralized final-release config: build artifacts are produced in platform jobs.
+builds:
+  - id: skip
+    skip: true
+
+release:
+  name_template: "The Codename Release"
+  body_template: |-
+    [{{ .Tag }}] - {{ .Date }}
+
+    Added
+    - [Placeholder]
+
+    Changed
+    - [Placeholder]
+
+    Fixed
+    - [Placeholder]
+
+changelog:
+  disable: true
+
+checksum:
+  name_template: "checksums.txt"
