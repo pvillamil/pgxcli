@@ -1,0 +1,103 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: "pgxcli-windows-amd64"
+    main: "./cmd/pgxcli"
+    binary: "pgxcli"
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+      - CXX=x86_64-w64-mingw32-g++
+    goos:
+      - windows
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+
+  - id: "pgxcli-windows-arm64"
+    main: "./cmd/pgxcli"
+    binary: "pgxcli"
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-w64-mingw32-gcc
+      - CXX=aarch64-w64-mingw32-g++
+    goos:
+      - windows
+    goarch:
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+
+archives:
+  - id: default
+    formats: ["zip"]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - "LICENSE"
+      - "README.md"
+
+chocolateys:
+  - name: "pgxcli"
+    owners: "Balaji J"
+    title: "pgxcli"
+    authors: "Balaji J"
+    project_url: "https://github.com/Balaji01-4D/pgxcli"
+    license_url: "https://github.com/Balaji01-4D/pgxcli/blob/main/LICENSE"
+    project_source_url: "https://github.com/Balaji01-4D/pgxcli"
+    docs_url: "https://github.com/Balaji01-4D/pgxcli/blob/main/README.md"
+    bug_tracker_url: "https://github.com/Balaji01-4D/pgxcli/issues"
+    tags: "cli database postgres postgresql"
+    summary: "An interactive PostgreSQL CLI written in Go."
+    description: |
+      pgxcli is an interactive PostgreSQL CLI written in Go.
+    api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
+    skip_publish: false
+
+winget:
+  - name: "pgxcli"
+    publisher: "Balaji J"
+    short_description: "An interactive PostgreSQL CLI written in Go"
+    license: "MIT"
+    publisher_url: "https://github.com/Balaji01-4D"
+    publisher_support_url: "https://github.com/Balaji01-4D/pgxcli/issues/new"
+    package_identifier: "Balaji01-4D.pgxcli"
+    homepage: "https://github.com/Balaji01-4D/pgxcli"
+    description: "An interactive PostgreSQL CLI written in Go"
+    tags:
+      - "cli"
+      - "database"
+      - "postgres"
+      - "postgresql"
+    repository:
+      owner: "Balaji01-4D"
+      name: "winget-pkgs"
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+      pull_request:
+        enabled: true
+        draft: false
+        base:
+          owner: "microsoft"
+          name: "winget-pkgs"
+          branch: "master"
+    commit_author:
+      name: "Balaji J"
+      email: "balaji.jothi.in@gmail.com"
+
+checksum:
+  name_template: "checksums-windows.txt"
