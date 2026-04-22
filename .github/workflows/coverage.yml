@@ -1,5 +1,17 @@
 name: coverage
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - 'internal/**'
+      - 'cmd/**'
+  pull_request:
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - 'internal/**'
+      - 'cmd/**'
 
 jobs:
   coverage:
