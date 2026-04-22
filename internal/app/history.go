@@ -19,7 +19,6 @@ type history struct {
 	path      string
 	loadCount int
 	logger    *slog.Logger
-	disabled  bool
 }
 
 func newHistory(historyPath string, logger *slog.Logger) (*history, []prompt.HistoryCommand) {
@@ -38,7 +37,7 @@ func (h *history) loadHistory() []prompt.HistoryCommand {
 	file, err := os.Open(h.path)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			h.disableHistory("failed load histrory form path, err, hisotry is disabled", err)
+			h.logger.Error("failed to load history from path", "path", h.path, "error", err)
 		}
 		return []prompt.HistoryCommand{}
 	}
@@ -50,7 +49,7 @@ func (h *history) loadHistory() []prompt.HistoryCommand {
 
 	entries, err := loadHistory(file, maxHistoryLines, h.logger)
 	if err != nil {
-		h.disableHistory("failed load histrory form path, err, hisotry is disabled", err)
+		h.logger.Error("failed to decode history", "path", h.path, "error", err)
 		return []prompt.HistoryCommand{}
 	}
 	return entries
@@ -82,27 +81,21 @@ func loadHistory(r io.Reader, maxHistoryLines int, logger *slog.Logger) ([]promp
 	return entries, nil
 }
 
-func (h *history) saveHistory(entries []prompt.HistoryCommand) {
-	if h.disabled {
-		return
-	}
-
+func (h *history) saveHistory(entries []prompt.HistoryCommand) error {
 	if len(entries) <= h.loadCount {
-		return
+		return nil
 	}
 
 	newCommands := entries[h.loadCount:]
 
 	historyDir := filepath.Dir(h.path)
 	if err := os.MkdirAll(historyDir, 0o700); err != nil {
-		h.disableHistory("failed save history to path, err, history is disabled", err)
-		return
+		return err
 	}
 
 	f, err := os.OpenFile(h.path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
 	if err != nil {
-		h.disableHistory("failed save history to path, err, history is disabled", err)
-		return
+		return err
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
@@ -117,20 +110,20 @@ func (h *history) saveHistory(entries []prompt.HistoryCommand) {
 			h.logger.Warn("skipping entry, failed to marshal", "command", entry.Command, "error", err)
 			continue
 		}
-		w.Write(line)
-		w.WriteByte('\n')
+		if _, err := w.Write(line); err != nil {
+			return err
+		}
+		if err := w.WriteByte('\n'); err != nil {
+			return err
+		}
+
 	}
 
 	if err := w.Flush(); err != nil {
-		h.disableHistory("failed save history to path, err, history is disabled", err)
-		return
+		return err
 	}
 	h.logger.Debug("history saved", "new_entries", len(newCommands))
-}
-
-func (h *history) disableHistory(message string, err error) {
-	h.logger.Error(message, "path", h.path, "err", err)
-	h.disabled = true
+	return nil
 }
 
 func getHistoryFilePath() string {
