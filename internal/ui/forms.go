@@ -58,13 +58,6 @@ func NewStyles(hasDarkBg bool) *Styles {
 	return &s
 }
 
-type state int
-
-const (
-	statusNormal state = iota
-	stateDone
-)
-
 var ErrFormAborted = errors.New("connection form aborted")
 
 type ConnectionValues struct {
@@ -76,7 +69,6 @@ type ConnectionValues struct {
 }
 
 type Model struct {
-	state     state
 	styles    func(bool) *Styles
 	form      *huh.Form
 	values    ConnectionValues
@@ -191,10 +183,10 @@ func (m *Model) View() tea.View {
 	case huh.StateCompleted:
 		var b strings.Builder
 		fmt.Fprintf(&b, "Connection details captured.\n\n")
-		fmt.Fprintf(&b, "Database: %s\n", fallback(m.values.Database, "(None)"))
-		fmt.Fprintf(&b, "Username: %s\n", fallback(m.values.Username, "(None)"))
-		fmt.Fprintf(&b, "Port: %s\n", fallback(m.values.Port, "(None)"))
-		fmt.Fprintf(&b, "Host: %s\n", fallback(m.values.Host, "(None)"))
+		fmt.Fprintf(&b, "Database: %s\n", fallback(m.values.Database))
+		fmt.Fprintf(&b, "Username: %s\n", fallback(m.values.Username))
+		fmt.Fprintf(&b, "Port: %s\n", fallback(m.values.Port))
+		fmt.Fprintf(&b, "Host: %s\n", fallback(m.values.Host))
 		fmt.Fprintf(&b, "Password: %s", maskedPassword(m.values.Password))
 		return tea.NewView(s.Status.Margin(0, 1).Padding(1, 2).Width(48).Render(b.String()) + "\n\n")
 	default:
@@ -206,10 +198,10 @@ func (m *Model) View() tea.View {
 		var status string
 		{
 			buildInfo := strings.Join([]string{
-				"Database: " + fallback(m.form.GetString("database"), "(None)"),
-				"Username: " + fallback(m.form.GetString("username"), "(None)"),
-				"Port: " + fallback(m.form.GetString("port"), "(None)"),
-				"Host: " + fallback(m.form.GetString("host"), "(None)"),
+				"Database: " + fallback(m.form.GetString("database")),
+				"Username: " + fallback(m.form.GetString("username")),
+				"Port: " + fallback(m.form.GetString("port")),
+				"Host: " + fallback(m.form.GetString("host")),
 				"Password: " + maskedPassword(m.form.GetString("password")),
 			}, "\n")
 
@@ -299,10 +291,10 @@ func RunConnectionForm(database, username, host, port string) (ConnectionValues,
 	return m.Result()
 }
 
-func fallback(value string, empty string) string {
+func fallback(value string) string {
 	value = strings.TrimSpace(value)
 	if value == "" {
-		return empty
+		return "(None)"
 	}
 	return value
 }
