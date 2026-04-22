@@ -53,35 +53,5 @@ chocolateys:
     api_key: "{{ .Env.CHOCOLATEY_API_KEY }}"
     skip_publish: false
 
-winget:
-  - name: "pgxcli"
-    publisher: "Balaji J"
-    short_description: "An interactive PostgreSQL CLI written in Go"
-    license: "MIT"
-    publisher_url: "https://github.com/Balaji01-4D"
-    publisher_support_url: "https://github.com/Balaji01-4D/pgxcli/issues/new"
-    package_identifier: "Balaji01-4D.pgxcli"
-    homepage: "https://github.com/Balaji01-4D/pgxcli"
-    description: "An interactive PostgreSQL CLI written in Go"
-    tags:
-      - "cli"
-      - "database"
-      - "postgres"
-      - "postgresql"
-    repository:
-      owner: "Balaji01-4D"
-      name: "winget-pkgs"
-      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-      pull_request:
-        enabled: true
-        draft: false
-        base:
-          owner: "microsoft"
-          name: "winget-pkgs"
-          branch: "master"
-    commit_author:
-      name: "Balaji J"
-      email: "balaji.jothi.in@gmail.com"
-
 checksum:
   name_template: "checksums-windows.txt"
