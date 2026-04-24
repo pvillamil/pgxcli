@@ -1,4 +1,4 @@
-package database
+package result
 
 import (
 	"io"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 // QueryResult represents a row-producing SQL execution result.
@@ -14,7 +13,25 @@ type QueryResult struct {
 	rowStreamer
 }
 
-func (r *QueryResult) isResult() {}
+func NewQuery(rows pgx.Rows, duration time.Duration) *QueryResult {
+	fds := rows.FieldDescriptions()
+	columns := make([]string, len(fds))
+	for i, fd := range fds {
+		columns[i] = fd.Name
+	}
+
+	return &QueryResult{
+		rowStreamer: rowStreamer{
+			rows:     rows,
+			columns:  columns,
+			duration: duration,
+		},
+	}
+}
+
+func (r *QueryResult) Type() ResultType {
+	return ResultTypeQuery
+}
 
 type rowStreamer struct {
 	rows     pgx.Rows
@@ -73,31 +90,6 @@ func (r *rowStreamer) Duration() time.Duration {
 // CommandTag returns the PostgreSQL command tag for the streamed rows.
 func (r *QueryResult) CommandTag() string {
 	return r.rows.CommandTag().String()
-}
-
-// Render fully materializes streamed rows into a pretty table writer.
-func (r *QueryResult) Render() (table.Writer, error) {
-	tw := table.NewWriter()
-
-	row := make(table.Row, len(r.columns))
-	for i, col := range r.columns {
-		row[i] = col
-	}
-	tw.AppendHeader(row)
-
-	for {
-		values, err := r.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-		row := make(table.Row, len(values))
-		copy(row, values)
-		tw.AppendRow(row)
-	}
-	return tw, nil
 }
 
 func convertValue(v any) any {

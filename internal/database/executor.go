@@ -6,16 +6,12 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/balaji01-4d/pgxcli/internal/database/result"
 	"github.com/balaji01-4d/pgxcli/internal/parser"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
-
-// Result marks values returned by SQL execution paths.
-type Result interface {
-	isResult()
-}
 
 type conn interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
@@ -68,7 +64,7 @@ func newExecutor(ctx context.Context, c Connector, logger *slog.Logger) (*execut
 }
 
 // For executing queries like SELECT, SHOW etc.
-func (e *executor) query(ctx context.Context, sql string, args ...any) (*QueryResult, error) {
+func (e *executor) query(ctx context.Context, sql string, args ...any) (result.Result, error) {
 	e.Logger.Debug("Executing query", "sql", sql)
 	start := time.Now()
 	rows, err := e.Conn.Query(ctx, sql, args...)
@@ -77,23 +73,13 @@ func (e *executor) query(ctx context.Context, sql string, args ...any) (*QueryRe
 		return nil, err
 	}
 	dur := time.Since(start)
-	fds := rows.FieldDescriptions()
-	columns := make([]string, len(fds))
-	for i, fd := range fds {
-		columns[i] = fd.Name
-	}
-	e.Logger.Info("Query completed", "duration_ms", dur.Milliseconds(), "columns", len(columns))
-	return &QueryResult{
-		rowStreamer: rowStreamer{
-			rows:     rows,
-			columns:  columns,
-			duration: dur,
-		},
-	}, nil
+
+	e.Logger.Info("Query completed", "duration_ms", dur.Milliseconds())
+	return result.NewQuery(rows, dur), nil
 }
 
 // For executing commands like INSERT, UPDATE, DELETE etc.
-func (e *executor) exec(ctx context.Context, sql string, args ...any) (*ExecResult, error) {
+func (e *executor) exec(ctx context.Context, sql string, args ...any) (result.Result, error) {
 	e.Logger.Debug("Executing command", "sql", sql)
 	start := time.Now()
 	tag, err := e.Conn.Exec(ctx, sql, args...)
@@ -103,15 +89,11 @@ func (e *executor) exec(ctx context.Context, sql string, args ...any) (*ExecResu
 	}
 	dur := time.Since(start)
 	e.Logger.Info("Command completed", "duration_ms", dur.Milliseconds(), "rows_affected", tag.RowsAffected(), "status", tag.String())
-	return &ExecResult{
-		RowsAffected: tag.RowsAffected(),
-		Status:       tag.String(),
-		Duration:     dur,
-	}, nil
+	return result.NewExec(tag, dur), nil
 }
 
 // execute determines whether to run query or exec based on SQL type.
-func (e *executor) execute(ctx context.Context, sql string, args ...any) (Result, error) {
+func (e *executor) execute(ctx context.Context, sql string, args ...any) (result.Result, error) {
 	if parser.IsQuery(sql) {
 		return e.query(ctx, sql, args...)
 	}
