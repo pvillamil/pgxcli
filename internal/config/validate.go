@@ -37,6 +37,19 @@ func validate(cfg Config) error {
 	} else if !onError.isValid() {
 		errs = append(errs, errors.New("on_error action must be one of: STOP, RESUME"))
 	}
+	if !cfg.Table.Style.isValid() {
+		errs = append(errs, errors.New("table style must be a valid style"))
+	}
+
+	if !cfg.Table.Color.Header.isValid() {
+		errs = append(errs, errors.New("table color header must be a valid color"))
+	}
+	if !cfg.Table.Color.Column.isValid() {
+		errs = append(errs, errors.New("table color column must be a valid color"))
+	}
+	if !cfg.Table.Color.Caption.isValid() {
+		errs = append(errs, errors.New("table color caption must be a valid color"))
+	}
 
 	return errors.Join(errs...)
 }

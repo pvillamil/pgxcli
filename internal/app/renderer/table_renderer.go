@@ -1,83 +1,112 @@
-package render
+package renderer
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
+	"github.com/balaji01-4d/pgxcli/internal/config"
 	"github.com/balaji01-4d/pgxspecial"
-	"github.com/jackc/pgx/v5"
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
 )
 
-// RowsResult renders row-based special command output into a pretty table.
-func RowsResult(result pgxspecial.SpecialCommandResult) (table.Writer, error) {
-	resultRows, ok := result.(pgxspecial.RowResult)
-	if !ok {
-		return nil, fmt.Errorf("invalid row result type")
-	}
-
-	return renderRows(resultRows.Rows), nil
+type rowsTableResult interface {
+	pgxspecial.SpecialCommandResult
+	Columns() []string
+	Data() [][]any
 }
 
-// DescribeTableResult renders each describe-table section as a table writer.
-func DescribeTableResult(result pgxspecial.SpecialCommandResult) ([]table.Writer, error) {
+type staticData struct {
+	columns []string
+	rows    [][]any
+	caption string
+}
+
+func (d staticData) Columns() []string {
+	return d.columns
+}
+
+func (d staticData) Rows() ([][]any, error) {
+	return d.rows, nil
+}
+
+func (d staticData) Caption() string {
+	return d.caption
+}
+
+// RowsResult renders row-based special command output.
+func RowsResult(result pgxspecial.SpecialCommandResult, c *config.Config) (string, error) {
+	resultRows, ok := result.(rowsTableResult)
+	if !ok {
+		return "", fmt.Errorf("invalid row result type")
+	}
+
+	return renderData(staticData{columns: resultRows.Columns(), rows: resultRows.Data()}, c)
+}
+
+// DescribeTableResult renders each describe-table section.
+func DescribeTableResult(result pgxspecial.SpecialCommandResult, c *config.Config) (string, error) {
 	describeTableResult, ok := result.(pgxspecial.DescribeTableListResult)
 	if !ok {
-		return nil, fmt.Errorf("invalid describe table result type")
+		return "", fmt.Errorf("invalid describe table result type")
 	}
 
-	writers := make([]table.Writer, 0, len(describeTableResult.Results))
+	out := make([]string, 0, len(describeTableResult.Results))
 
 	for _, tableDesc := range describeTableResult.Results {
-		writers = append(writers, renderTableDescription(tableDesc))
+		rendered, err := renderTableDescription(tableDesc, c)
+		if err != nil {
+			return "", err
+		}
+		out = append(out, rendered)
 	}
-	return writers, nil
+	return strings.Join(out, "\n"), nil
 }
 
-// ExtensionVerboseResult renders each verbose extension result as a table writer.
-func ExtensionVerboseResult(result pgxspecial.SpecialCommandResult) ([]table.Writer, error) {
+// ExtensionVerboseResult renders each verbose extension result.
+func ExtensionVerboseResult(result pgxspecial.SpecialCommandResult, c *config.Config) (string, error) {
 	extResult, ok := result.(pgxspecial.ExtensionVerboseListResult)
 	if !ok {
-		return nil, fmt.Errorf("invalid extension verbose result type")
+		return "", fmt.Errorf("invalid extension verbose result type")
 	}
-	writers := make([]table.Writer, 0, len(extResult.Results))
+	out := make([]string, 0, len(extResult.Results))
 
 	for _, ext := range extResult.Results {
-		writers = append(writers, renderExtensionVerbose(ext))
+		rendered, err := renderExtensionVerbose(ext, c)
+		if err != nil {
+			return "", err
+		}
+		out = append(out, rendered)
 	}
-	return writers, nil
+	return strings.Join(out, "\n"), nil
 }
 
-func renderExtensionVerbose(ext pgxspecial.ExtensionVerboseResult) table.Writer {
-	tw := table.NewWriter()
-	tw.SetTitle(ext.Name)
-
-	columns := table.Row{setColumnCellColor("Object Description")}
-	tw.AppendHeader(columns)
-
+func renderExtensionVerbose(ext pgxspecial.ExtensionVerboseResult, c *config.Config) (string, error) {
+	rows := make([][]any, 0, len(ext.Description))
 	for _, objDesc := range ext.Description {
-		row := table.Row{objDesc}
-		tw.AppendRow(row)
+		rows = append(rows, []any{objDesc})
 	}
-	return tw
+
+	return renderData(staticData{
+		columns: []string{"Object Description"},
+		rows:    rows,
+		caption: ext.Name,
+	}, c)
 }
 
-func renderTableDescription(result pgxspecial.DescribeTableResult) table.Writer {
-	tw := table.NewWriter()
+func renderTableDescription(result pgxspecial.DescribeTableResult, c *config.Config) (string, error) {
+	rows := make([][]any, 0, len(result.Data))
+	for _, values := range result.Data {
+		row := make([]any, len(values))
+		for i, v := range values {
+			row[i] = v
+		}
+		rows = append(rows, row)
+	}
 
-	columns := make(table.Row, len(result.Columns))
-	for i, col := range result.Columns {
-		columns[i] = setColumnCellColor(col)
-	}
-	tw.AppendHeader(columns)
-	okay := tw.ImportGrid(result.Data)
-	if !okay {
-		return nil
-	}
-	tw.SetCaption(renderTableFooter(result.TableMetaData))
-	return tw
+	return renderData(staticData{
+		columns: result.Columns,
+		rows:    rows,
+		caption: renderTableFooter(result.TableMetaData),
+	}, c)
 }
 
 func renderTableFooter(meta pgxspecial.TableFooterMeta) string {
@@ -152,33 +181,10 @@ func renderTableFooter(meta pgxspecial.TableFooterMeta) string {
 	return sb.String()
 }
 
-func renderRows(pgxRows pgx.Rows) table.Writer {
-	defer pgxRows.Close()
-
-	tw := table.NewWriter()
-
-	columns := make(table.Row, len(pgxRows.FieldDescriptions()))
-	for i, col := range pgxRows.FieldDescriptions() {
-		columns[i] = setColumnCellColor(col.Name)
+func renderData(data Data, c *config.Config) (string, error) {
+	var sb strings.Builder
+	if err := Table(data, &sb, c); err != nil {
+		return "", err
 	}
-	tw.AppendHeader(columns)
-
-	for pgxRows.Next() {
-		values, err := pgxRows.Values()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil
-		}
-		row := make(table.Row, len(values))
-		copy(row, values)
-		tw.AppendRow(row)
-	}
-
-	return tw
-}
-
-func setColumnCellColor(s string) string {
-	return text.FgCyan.Sprint(s)
+	return sb.String(), nil
 }

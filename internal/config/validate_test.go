@@ -11,13 +11,21 @@ import (
 
 func TestValidate_Success(t *testing.T) {
 	cfg := Config{
-		Main: main{
+		Main: MainConfig{
 			Prompt:      "test> ",
 			Style:       "monokai",
 			HistoryFile: "default",
 			LogFile:     "default",
 			Pager:       "auto",
 			OnError:     OnErrorStop,
+		},
+		Table: TableConfig{
+			Style: StyleDefault,
+			Color: TableColorConfig{
+				Header:  FgCyan,
+				Column:  FgWhite,
+				Caption: FgWhite,
+			},
 		},
 	}
 
@@ -27,7 +35,7 @@ func TestValidate_Success(t *testing.T) {
 
 func TestValidate_MultipleErrors(t *testing.T) {
 	cfg := Config{
-		Main: main{
+		Main: MainConfig{
 			Prompt:      "",
 			Style:       "",
 			HistoryFile: "",

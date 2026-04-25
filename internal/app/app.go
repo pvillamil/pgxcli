@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	render "github.com/balaji01-4d/pgxcli/internal/app/renderer"
+	"github.com/balaji01-4d/pgxcli/internal/app/renderer"
 	"github.com/balaji01-4d/pgxcli/internal/cliio"
 	"github.com/balaji01-4d/pgxcli/internal/config"
 	"github.com/balaji01-4d/pgxcli/internal/database"
+	"github.com/balaji01-4d/pgxcli/internal/database/result"
 	"github.com/balaji01-4d/pgxcli/internal/parser"
 	"github.com/balaji01-4d/pgxspecial"
-	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 // Application defines the interface for the main application logic.
@@ -193,40 +193,41 @@ func (p *pgxCLI) handleSpecialCommand(ctx context.Context, metaResult pgxspecial
 		return info, false, nil
 
 	case pgxspecial.ResultKindRows:
-		table, err := render.RowsResult(metaResult)
+		table, err := renderer.RowsResult(metaResult, p.config)
 		if err != nil {
 			return "", false, err
 		}
-		return table.Render(), false, nil
+		return table, false, nil
 
 	case pgxspecial.ResultKindDescribeTable:
-		tables, err := render.DescribeTableResult(metaResult)
+		tables, err := renderer.DescribeTableResult(metaResult, p.config)
 		if err != nil {
 			p.logger.Error("error rendering describe table result", "error", err)
 			return "", false, err
 		}
-		return render.Tables(tables, table.StyleBold), false, nil
+		return tables, false, nil
 
 	case pgxspecial.ResultKindExtensionVerbose:
-		tables, err := render.ExtensionVerboseResult(metaResult)
+		tables, err := renderer.ExtensionVerboseResult(metaResult, p.config)
 		if err != nil {
 			return "", false, err
 		}
-		return render.Tables(tables, table.StyleBold), false, nil
+		return tables, false, nil
 
 	default:
 		return "", false, nil
 	}
 }
 
-func (p *pgxCLI) handleQueryResult(result database.Result) error {
-	switch res := result.(type) {
-	case *database.QueryResult:
-		tw, err := res.Render()
+func (p *pgxCLI) handleQueryResult(r result.Result) error {
+	switch res := r.(type) {
+	case *result.QueryResult:
+		var s strings.Builder
+		err := renderer.Table(res, &s, p.config)
 		if err != nil {
 			return err
 		}
-		output := tw.Render()
+		output := s.String()
 		// If columns exist, we printed a table. Append the command tag (e.g., "SELECT 5", "INSERT 0 1").
 		// If no columns, we just print the command tag.
 		if len(res.Columns()) == 0 {
@@ -237,12 +238,12 @@ func (p *pgxCLI) handleQueryResult(result database.Result) error {
 		p.Printer.PrintViaPager(output)
 		p.Printer.PrintTime(res.Duration())
 		return nil
-	case *database.ExecResult:
+	case *result.ExecResult:
 		p.Printer.PrintViaPager(res.Status)
 		fmt.Println()
 		p.Printer.PrintTime(res.Duration)
 		return nil
 	default:
-		return fmt.Errorf("unsupported query result type: %T", result)
+		return fmt.Errorf("unsupported query result type: %T", r)
 	}
 }

@@ -35,3 +35,26 @@ pager = "auto"
 # continue executing the remaining statements, or stopping
 # Possible values: "STOP" or "RESUME"
 on_error = "STOP"
+
+# Table style.
+# Valid values:
+# "none", "ascii", "light", "heavy", "double", "double_long"
+# "light_heavy", "heavy_light", "light_double", "double_light", "rounded", "markdown"
+# "graphical", "merger", "default", "dotted", "arrow", "starry", "hearts"
+# "circuit", "nature", "artistic", "8bit", "chaos", "dots", "blocks", "zen"
+# "vintage", "sketch", "arrow_double", "celestial", "cyber", "runic", "industrial"
+# "ink", "arcade", "blossom", "frosted", "mosaic", "ufo", "steampunk", "galaxy"
+# "jazz", "puzzle", "hypno"
+[table]
+style = "default"
+
+
+# Table text colors.
+# Valid values:
+# "black", "red", "green", "yellow", "blue", "magenta", "cyan", "white", "default"
+# High-intensity variants use a trailing "+":
+# "black+", "red+", "green+", "yellow+", "blue+", "magenta+", "cyan+", "white+"
+[table.color]
+header = "cyan"
+column = "white"
+caption = "white"

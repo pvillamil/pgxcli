@@ -23,16 +23,31 @@ const (
 
 // Config represents the top-level application configuration.
 type Config struct {
-	Main main `mapstructure:"main" toml:"main"`
+	Main  MainConfig  `mapstructure:"main" toml:"main"`
+	Table TableConfig `mapstructure:"table" toml:"table"`
 }
 
-type main struct {
+// MainConfig contains general CLI and session settings.
+type MainConfig struct {
 	Prompt      string        `mapstructure:"prompt" toml:"prompt"`
 	Style       string        `mapstructure:"style" toml:"style"`
 	HistoryFile string        `mapstructure:"history_file" toml:"history_file"`
 	LogFile     string        `mapstructure:"log_file" toml:"log_file"`
 	Pager       string        `mapstructure:"pager" toml:"pager"`
 	OnError     OnErrorAction `mapstructure:"on_error" toml:"on_error"`
+}
+
+// TableConfig contains output table rendering settings.
+type TableConfig struct {
+	Style TableStyle       `mapstructure:"style" toml:"style"`
+	Color TableColorConfig `mapstructure:"color" toml:"color"`
+}
+
+// TableColorConfig contains color settings for table elements.
+type TableColorConfig struct {
+	Header  TableColor `mapstructure:"header" toml:"header"`
+	Column  TableColor `mapstructure:"column" toml:"column"`
+	Caption TableColor `mapstructure:"caption" toml:"caption"`
 }
 
 // Load reads the embedded default configuration and merges with user configuration.
