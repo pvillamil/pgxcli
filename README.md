@@ -120,7 +120,7 @@ pgxcli postgres://user:password@localhost:5432/dbname
 pgxcli -i
 ```
 
-For full flag documentation, see the [docs][https://balaji01-4d.github.io/pgxcli/reference/cli-reference/].
+For full flag documentation, see the [docs][cli-ref].
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -131,23 +131,10 @@ On first run, a config file is created at:
 
 * `~/.config/pgxcli/config.toml` (or the OS-equivalent user config directory)
 
-For configuration documentation, see the [docs][https://balaji01-4d.github.io/pgxcli/reference/cli-reference/]
+For configuration documentation, see the [docs][config-ref]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- ROADMAP -->
-## Roadmap
-
-See the [open issues][issues-url] for proposed features and known issues.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- LICENSE -->
-## License
-
-Distributed under the MIT License. See [`LICENSE`][license-url] for more information.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- ACKNOWLEDGMENTS -->
 ## Acknowledgments
@@ -184,3 +171,5 @@ Distributed under the MIT License. See [`LICENSE`][license-url] for more informa
 [pg-query-url]: https://github.com/pganalyze/pg_query_go
 [cli-reference-url]: https://github.com/Balaji01-4D/pgxcli/blob/main/docs/src/content/docs/reference/cli-reference.md
 [pgcli-url]: https://github.com/dbcli/pgcli
+[cli-ref]: https://balaji01-4d.github.io/pgxcli/reference/cli-reference/
+[config-ref]: https://balaji01-4d.github.io/pgxcli/guides/configuration/
