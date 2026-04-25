@@ -65,8 +65,11 @@ func (r *pgxReader) History() []prompt.HistoryCommand {
 	return r.prompt.History()
 }
 
-func getSyntaxHighlighting(style string) (prompt.SyntaxHighlighter, error) {
-	return prompt.SyntaxHighlighterChroma("PostgreSQL SQL dialect", chromaFormatter, style)
+func getSyntaxHighlighting(style config.SyntaxHighlightStyle) (prompt.SyntaxHighlighter, error) {
+	if style == config.SyntaxStyleDefault {
+		style = config.SyntaxStyleMonokai
+	}
+	return prompt.SyntaxHighlighterChroma("PostgreSQL SQL dialect", chromaFormatter, string(style))
 }
 
 func applyReaderOptions(r *pgxReader, config *config.Config, histories []prompt.HistoryCommand) error {

@@ -11,8 +11,9 @@ prompt = "\\u@\\h:\\d> "
 
 # syntax highlighting style
 # Available styles:
-# monokai, dracula, nord, onedark, github-dark
-# gruvbox, solarized-dark, xcode-dark, darcula, catppuccin-mocha
+# default (same as monokai), monokai, dracula, nord, onedark, github-dark
+# github, gruvbox, gruvbox-light, solarized-dark, solarized-light
+# catppuccin-mocha, rose-pine, tokyonight-night, xcode-dark, ...
 # For more styles, visit "https://xyproto.github.io/splash/docs/index.html"
 style = "monokai"
 

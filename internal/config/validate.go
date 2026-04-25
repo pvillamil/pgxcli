@@ -13,6 +13,8 @@ func validate(cfg Config) error {
 	}
 	if cfg.Main.Style == "" {
 		errs = append(errs, errors.New("style must not be empty"))
+	} else if !cfg.Main.Style.isValid() {
+		errs = append(errs, errors.New("style must be a valid syntax highlighting style"))
 	}
 	if cfg.Main.HistoryFile == "" {
 		errs = append(errs, errors.New("history file path must not be empty"))

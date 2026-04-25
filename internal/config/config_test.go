@@ -28,7 +28,7 @@ func TestLoad_Success(t *testing.T) {
 	assert.NotNil(t, cfg)
 
 	assert.Equal(t, "\\u@\\h:\\d> ", cfg.Main.Prompt)
-	assert.Equal(t, "monokai", cfg.Main.Style)
+	assert.Equal(t, SyntaxStyleMonokai, cfg.Main.Style)
 	assert.Equal(t, "default", cfg.Main.HistoryFile)
 	assert.Equal(t, "default", cfg.Main.LogFile)
 	assert.Equal(t, "auto", cfg.Main.Pager)
@@ -57,7 +57,7 @@ on_error = "RESUME"
 	assert.NotNil(t, cfg)
 
 	assert.Equal(t, "custom> ", cfg.Main.Prompt)
-	assert.Equal(t, "dracula", cfg.Main.Style)
+	assert.Equal(t, SyntaxStyleDracula, cfg.Main.Style)
 	assert.Equal(t, "/custom/history.txt", cfg.Main.HistoryFile)
 	assert.Equal(t, "/custom/log.txt", cfg.Main.LogFile)
 	assert.Equal(t, "never", cfg.Main.Pager)
@@ -81,7 +81,7 @@ prompt = "custom> "
 	assert.NotNil(t, cfg)
 
 	assert.Equal(t, "custom> ", cfg.Main.Prompt)
-	assert.Equal(t, "monokai", cfg.Main.Style)
+	assert.Equal(t, SyntaxStyleMonokai, cfg.Main.Style)
 	assert.Equal(t, "default", cfg.Main.HistoryFile)
 	assert.Equal(t, "default", cfg.Main.LogFile)
 	assert.Equal(t, "auto", cfg.Main.Pager)

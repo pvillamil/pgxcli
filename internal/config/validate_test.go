@@ -13,7 +13,7 @@ func TestValidate_Success(t *testing.T) {
 	cfg := Config{
 		Main: MainConfig{
 			Prompt:      "test> ",
-			Style:       "monokai",
+			Style:       SyntaxStyleMonokai,
 			HistoryFile: "default",
 			LogFile:     "default",
 			Pager:       "auto",
@@ -99,6 +99,29 @@ on_error = "STOP"
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "validate config")
 	assert.Contains(t, err.Error(), "style must not be empty")
+}
+
+func TestLoad_ValidationFailsOnInvalidStyle(t *testing.T) {
+	setIsolatedUserConfigEnv(t)
+
+	userConfigPath, err := UserConfigPath()
+	require.NoError(t, err)
+	require.NoError(t, os.MkdirAll(filepath.Dir(userConfigPath), 0o700))
+
+	userConfig := `[main]
+prompt = "test> "
+style = "unknown-style"
+history_file = "default"
+log_file = "default"
+pager = "auto"
+on_error = "STOP"
+`
+	require.NoError(t, os.WriteFile(userConfigPath, []byte(userConfig), 0o644))
+
+	_, err = Load()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "validate config")
+	assert.Contains(t, err.Error(), "style must be a valid syntax highlighting style")
 }
 
 func TestLoad_ValidationFailsOnInvalidPagerMode(t *testing.T) {

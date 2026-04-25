@@ -29,12 +29,12 @@ type Config struct {
 
 // MainConfig contains general CLI and session settings.
 type MainConfig struct {
-	Prompt      string        `mapstructure:"prompt" toml:"prompt"`
-	Style       string        `mapstructure:"style" toml:"style"`
-	HistoryFile string        `mapstructure:"history_file" toml:"history_file"`
-	LogFile     string        `mapstructure:"log_file" toml:"log_file"`
-	Pager       string        `mapstructure:"pager" toml:"pager"`
-	OnError     OnErrorAction `mapstructure:"on_error" toml:"on_error"`
+	Prompt      string               `mapstructure:"prompt" toml:"prompt"`
+	Style       SyntaxHighlightStyle `mapstructure:"style" toml:"style"`
+	HistoryFile string               `mapstructure:"history_file" toml:"history_file"`
+	LogFile     string               `mapstructure:"log_file" toml:"log_file"`
+	Pager       string               `mapstructure:"pager" toml:"pager"`
+	OnError     OnErrorAction        `mapstructure:"on_error" toml:"on_error"`
 }
 
 // TableConfig contains output table rendering settings.
