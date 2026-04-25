@@ -29,7 +29,7 @@ func NewQuery(rows pgx.Rows, duration time.Duration) *QueryResult {
 	}
 }
 
-func (r *QueryResult) Type() ResultType {
+func (r *QueryResult) Type() Type {
 	return ResultTypeQuery
 }
 
@@ -54,7 +54,7 @@ func (r *QueryResult) Rows() ([][]any, error) {
 	return collected, nil
 }
 
-func (r *QueryResult) Footer() string { return "" } // TODO: add execution time or row count
+func (r *QueryResult) Caption() string { return "" } // TODO: add execution time or row count
 
 type rowStreamer struct {
 	rows     pgx.Rows

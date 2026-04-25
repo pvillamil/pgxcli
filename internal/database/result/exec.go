@@ -21,6 +21,6 @@ func NewExec(tag pgconn.CommandTag, duration time.Duration) *ExecResult {
 	}
 }
 
-func (e *ExecResult) Type() ResultType {
+func (e *ExecResult) Type() Type {
 	return ResultTypeExec
 }

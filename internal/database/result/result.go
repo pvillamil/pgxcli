@@ -1,14 +1,14 @@
 package result
 
-type ResultType int
+type Type int
 
 const (
-	ResultTypeQuery ResultType = iota
+	ResultTypeQuery Type = iota
 	ResultTypeExec
 	ResultTypeSpecial
 )
 
 // Result marks values returned by SQL execution paths.
 type Result interface {
-	Type() ResultType
+	Type() Type
 }
