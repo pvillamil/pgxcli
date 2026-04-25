@@ -33,6 +33,29 @@ func (r *QueryResult) Type() ResultType {
 	return ResultTypeQuery
 }
 
+func (r *QueryResult) Columns() []string {
+	return r.rowStreamer.Columns()
+}
+
+func (r *QueryResult) Rows() ([][]any, error) {
+	collected := make([][]any, 256) // pre alloc
+	for {
+		row, err := r.Next()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		collected = append(collected, row)
+	}
+	r.Close()
+	return collected, nil
+}
+
+func (r *QueryResult) Footer() string { return "" } // TODO: add execution time or row count
+
 type rowStreamer struct {
 	rows     pgx.Rows
 	columns  []string

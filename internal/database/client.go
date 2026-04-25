@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/balaji01-4d/pgxcli/internal/database/result"
 	"github.com/balaji01-4d/pgxspecial"
 )
 
@@ -44,16 +45,12 @@ func (c *Client) Connect(ctx context.Context, connector Connector) error {
 }
 
 // ExecuteSpecial executes a pgxspecial command (for example: \q, \c, \conninfo).
-func (c *Client) ExecuteSpecial(ctx context.Context,
-	command string,
-) (pgxspecial.SpecialCommandResult, bool, error) {
-	result, okay, err := pgxspecial.ExecuteSpecialCommand(ctx, c.executor.Conn, command)
-	c.logger.Info("Executed special command", "command", command, "result", result, "okay", okay, "err", err)
-	return result, okay, err
+func (c *Client) ExecuteSpecial(ctx context.Context, command string) (pgxspecial.SpecialCommandResult, bool, error) {
+	return c.executor.executeSpecial(ctx, command)
 }
 
 // ExecuteQuery runs SQL through the underlying executor and returns typed results.
-func (c *Client) ExecuteQuery(ctx context.Context, query string) (Result, error) {
+func (c *Client) ExecuteQuery(ctx context.Context, query string) (result.Result, error) {
 	return c.executor.execute(ctx, query)
 }
 

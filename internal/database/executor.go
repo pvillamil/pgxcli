@@ -8,6 +8,7 @@ import (
 
 	"github.com/balaji01-4d/pgxcli/internal/database/result"
 	"github.com/balaji01-4d/pgxcli/internal/parser"
+	"github.com/balaji01-4d/pgxspecial"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -98,6 +99,15 @@ func (e *executor) execute(ctx context.Context, sql string, args ...any) (result
 		return e.query(ctx, sql, args...)
 	}
 	return e.exec(ctx, sql, args...)
+}
+
+func (e *executor) executeSpecial(ctx context.Context, cmd string) (pgxspecial.SpecialCommandResult, bool, error) {
+	specialResult, ok, err := pgxspecial.ExecuteSpecialCommand(ctx, e.Conn, cmd)
+	if err != nil {
+		e.Logger.Error("Special command execution failed", "error", err, "command", cmd)
+		return nil, ok, err
+	}
+	return specialResult, ok, nil
 }
 
 func (e *executor) close(ctx context.Context) error {
