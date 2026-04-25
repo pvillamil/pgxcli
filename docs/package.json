@@ -16,5 +16,11 @@
     "astro": "^6.0.0",
     "astro-icon": "^1.1.5",
     "sharp": "^0.34.5"
-  }
+  },
+  "description": "This directory contains the documentation site for pgxcli, built with [Astro](https://astro.build) and [Starlight](https://starlight.astro.build).",
+  "main": "index.js",
+  "devDependencies": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
