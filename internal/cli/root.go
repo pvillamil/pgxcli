@@ -214,7 +214,10 @@ func resolveInteractiveConnectionParams(
 	}
 	if connValues.Port != "" {
 		// Ignoring error since the form validation ensures this is a valid port.
-		params.port = mustParsePort(connValues.Port)
+		params.port, err = mustParsePort(connValues.Port)
+		if err != nil {
+			return connectionParams{}, err
+		}
 	}
 
 	return params, nil
@@ -396,9 +399,12 @@ func promptPassword() (string, error) {
 	return pwd, nil
 }
 
-func mustParsePort(port string) uint16 {
-	portNum, _ := strconv.Atoi(port)
-	return uint16(portNum)
+func mustParsePort(port string) (uint16, error) {
+	portNum, err := strconv.Atoi(port)
+	if err != nil {
+		return 0, err
+	}
+	return uint16(portNum), nil
 }
 
 // getDefaultUser gets the default username
