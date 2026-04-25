@@ -30,7 +30,6 @@ func TestNewModel_DefaultPort(t *testing.T) {
 			m := newModel("postgres", "user", "localhost", tc.input)
 			require.NotNil(t, m)
 			assert.Equal(t, tc.wantPort, m.values.Port)
-			assert.Equal(t, maxWidth, m.width)
 			require.NotNil(t, m.form)
 		})
 	}

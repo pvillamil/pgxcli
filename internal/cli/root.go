@@ -79,6 +79,9 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 				cliCtx.Logger.Error("Application context not initialized")
 				return fmt.Errorf("application context not initialized")
 			}
+			if !bool(interactiveConnFlag) {
+				ui.PrintBanner(version)
+			}
 			cliCtx.App.Start(ctx, cliCtx.Client)
 			return nil
 		},

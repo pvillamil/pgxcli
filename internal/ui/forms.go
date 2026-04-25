@@ -41,7 +41,7 @@ func newStyles(hasDarkBg bool) *styles {
 	s.HeaderText = lipgloss.NewStyle().
 		Foreground(s.Indigo).
 		Bold(true).
-		Padding(0, 1, 0, 2)
+		Padding(0, 2)
 	s.Status = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(s.Indigo).
@@ -75,7 +75,8 @@ type model struct {
 	form      *huh.Form
 	values    ConnectionValues
 	hasDarkBg bool
-	width     int
+	height    int
+	termWidth int
 }
 
 func newModel(database, username, host, port string) *model {
@@ -85,7 +86,6 @@ func newModel(database, username, host, port string) *model {
 	}
 
 	m := &model{
-		width:  maxWidth,
 		styles: newStyles,
 		values: ConnectionValues{
 			Database: database,
@@ -117,13 +117,12 @@ func newModel(database, username, host, port string) *model {
 			huh.NewInput().
 				Key("host").
 				Title("Host").
-				Description("Database host address, leave blank for unix socket.").
+				Description("unix socket if empty").
 				Placeholder("localhost").
 				Value(&m.values.Host),
 			huh.NewInput().
 				Key("password").
 				Title("Password").
-				Description("leave blank to use default").
 				EchoMode(huh.EchoModePassword).
 				Value(&m.values.Password),
 		),
@@ -146,12 +145,12 @@ func minInt(x, y int) int {
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	styles := m.styles(m.hasDarkBg)
 	switch msg := msg.(type) {
 	case tea.BackgroundColorMsg:
 		m.hasDarkBg = msg.IsDark()
 	case tea.WindowSizeMsg:
-		m.width = minInt(msg.Width, maxWidth) - styles.Base.GetHorizontalFrameSize()
+		m.termWidth = msg.Width
+		m.height = msg.Height
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -190,48 +189,54 @@ func (m *model) View() tea.View {
 		fmt.Fprintf(&b, "Port: %s\n", fallback(m.values.Port))
 		fmt.Fprintf(&b, "Host: %s\n", fallback(m.values.Host))
 		fmt.Fprintf(&b, "Password: %s", maskedPassword(m.values.Password))
-		return tea.NewView(s.Status.Margin(0, 1).Padding(1, 2).Width(48).Render(b.String()) + "\n\n")
+		rendered := s.Status.Margin(0, 1).Padding(1, 2).Width(48).Render(b.String())
+		view := tea.NewView(lipgloss.Place(m.termWidth, m.height, lipgloss.Center, lipgloss.Center, rendered))
+		view.AltScreen = true
+		return view
 	default:
-		// Form (left side)
+		// Orca (left side)
+		orca := lipgloss.NewStyle().Margin(1, 4, 0, 0).Render(orcaView())
+
+		// Form card (right side)
 		v := strings.TrimSuffix(m.form.View(), "\n\n")
-		form := lipgloss.NewStyle().Margin(1, 0).Render(v)
+		card := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(s.Indigo).
+			Padding(0, 1).
+			Render(v)
 
-		// Status (right side)
-		var status string
-		{
-			buildInfo := strings.Join([]string{
-				"Database: " + fallback(m.form.GetString("database")),
-				"Username: " + fallback(m.form.GetString("username")),
-				"Port: " + fallback(m.form.GetString("port")),
-				"Host: " + fallback(m.form.GetString("host")),
-				"Password: " + maskedPassword(m.form.GetString("password")),
-			}, "\n")
+		// Live DSN preview
+		preview := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("240")).
+			Italic(true).
+			MarginTop(1).
+			Render(buildDSNPreview(
+				m.form.GetString("database"),
+				m.form.GetString("username"),
+				m.form.GetString("host"),
+				m.form.GetString("port"),
+			))
 
-			const statusWidth = 28
-			statusMarginLeft := m.width - statusWidth - lipgloss.Width(form) - s.Status.GetMarginRight()
-			if statusMarginLeft < 0 {
-				statusMarginLeft = 0
-			}
-			status = s.Status.
-				Height(lipgloss.Height(form)).
-				Width(statusWidth).
-				MarginLeft(statusMarginLeft).
-				Render(s.StatusHeader.Render("Current Input") + "\n" + buildInfo)
-		}
+		rightPanel := lipgloss.NewStyle().Margin(1, 0).Render(
+			lipgloss.JoinVertical(lipgloss.Left, card, preview),
+		)
 
 		errors := m.form.Errors()
 		header := m.appBoundaryView("PostgreSQL Connection Form")
 		if len(errors) > 0 {
 			header = m.appErrorBoundaryView(m.errorView())
 		}
-		body := lipgloss.JoinHorizontal(lipgloss.Left, form, status)
+		body := lipgloss.JoinHorizontal(lipgloss.Center, orca, rightPanel)
 
 		footer := m.appBoundaryView(m.form.Help().ShortHelpView(m.form.KeyBinds()))
 		if len(errors) > 0 {
 			footer = m.appErrorBoundaryView("")
 		}
 
-		return tea.NewView(s.Base.Render(header + "\n" + body + "\n\n" + footer))
+		content := s.Base.Render(header + "\n" + body + "\n\n" + footer)
+		view := tea.NewView(lipgloss.Place(m.termWidth, m.height, lipgloss.Center, lipgloss.Center, content))
+		view.AltScreen = true
+		return view
 	}
 }
 
@@ -245,22 +250,30 @@ func (m *model) errorView() string {
 
 func (m *model) appBoundaryView(text string) string {
 	s := m.styles(m.hasDarkBg)
+	w := m.termWidth - s.Base.GetHorizontalFrameSize()
+	if w <= 0 {
+		w = maxWidth
+	}
 	return lipgloss.PlaceHorizontal(
-		m.width,
+		w,
 		lipgloss.Left,
 		s.HeaderText.Render(text),
-		lipgloss.WithWhitespaceChars("/"),
+		lipgloss.WithWhitespaceChars("─"),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(s.Indigo)),
 	)
 }
 
 func (m *model) appErrorBoundaryView(text string) string {
 	s := m.styles(m.hasDarkBg)
+	w := m.termWidth - s.Base.GetHorizontalFrameSize()
+	if w <= 0 {
+		w = maxWidth
+	}
 	return lipgloss.PlaceHorizontal(
-		m.width,
+		w,
 		lipgloss.Left,
 		s.ErrorHeaderText.Render(text),
-		lipgloss.WithWhitespaceChars("/"),
+		lipgloss.WithWhitespaceChars("─"),
 		lipgloss.WithWhitespaceStyle(lipgloss.NewStyle().Foreground(s.Red)),
 	)
 }
@@ -307,6 +320,22 @@ func maskedPassword(password string) string {
 		return "(None)"
 	}
 	return strings.Repeat("•", len(password))
+}
+
+func buildDSNPreview(db, user, host, port string) string {
+	if db == "" {
+		db = "<database>"
+	}
+	if user == "" {
+		user = "<username>"
+	}
+	if host == "" {
+		host = "localhost"
+	}
+	if port == "" {
+		port = "5432"
+	}
+	return fmt.Sprintf("postgresql://%s@%s:%s/%s", user, host, port, db)
 }
 
 func validatePort(v string) error {
