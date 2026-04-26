@@ -233,7 +233,7 @@ func (p *pgxCLI) handleQueryResult(r result.Result) error {
 		if len(res.Columns()) == 0 {
 			output = res.CommandTag()
 		} else {
-			output += "\n" + res.CommandTag()
+			output += res.CommandTag()
 		}
 		p.Printer.PrintViaPager(output)
 		p.Printer.PrintTime(res.Duration())

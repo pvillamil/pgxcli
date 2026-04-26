@@ -28,13 +28,13 @@ func Table(data Data, w io.Writer, c *config.Config) error {
 		return err
 	}
 
-	captionColor := getCaptionColor(c.Table.Color.Caption)
-	colorizedCaption := color.New(captionColor).Sprint(data.Caption())
-
-	caption := tw.Caption{
-		Text: colorizedCaption,
-		Spot: tw.SpotBottomLeft,
+	if captionText := data.Caption(); captionText != "" {
+		captionColor := getCaptionColor(c.Table.Color.Caption)
+		caption := tw.Caption{
+			Text: color.New(captionColor).Sprint(captionText),
+			Spot: tw.SpotBottomLeft,
+		}
+		t.Caption(caption)
 	}
-	t.Caption(caption)
 	return t.Render()
 }
