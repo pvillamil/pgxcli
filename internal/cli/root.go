@@ -35,6 +35,7 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 		interactiveConnFlag interactiveConnFlag
 	)
 
+	// pgKws stores the postgres keywords from internal/parser/pg_kw.txt
 	var pgKws []string
 
 	rootCmd := &cobra.Command{
