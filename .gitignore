@@ -11,3 +11,7 @@
 /notes
 
 dist/
+
+
+.docusaurus/
+build/
