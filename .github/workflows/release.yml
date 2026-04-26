@@ -122,7 +122,13 @@ jobs:
           path: |
             dist/*.tar.gz
             dist/*.zip
-            dist/*.rb
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-homebrew
+          if-no-files-found: error
+          retention-days: 7
+          path: dist/pgxcli.rb
 
   windows:
     needs: validate-tag-name

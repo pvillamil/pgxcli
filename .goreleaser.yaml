@@ -3,6 +3,9 @@
 
 version: 2
 
+release:
+  disable: true
+
 before:
   hooks:
     - go mod tidy
@@ -117,11 +120,12 @@ archives:
 
 brews: #build:macos
   - name: pgxcli
-    ids: [pgxcli-darwin]
+    ids: [darwin]
     homepage: "https://github.com/Balaji01-4D/pgxcli"
     description: "An interactive PostgreSQL CLI written in Go"
     license: "MIT"
     directory: Formula
+    url_template: "https://github.com/Balaji01-4D/pgxcli/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
     skip_upload: true
     test: |
       system "#{bin}/pgxcli --version"
