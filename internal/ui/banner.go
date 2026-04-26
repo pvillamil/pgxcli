@@ -55,6 +55,6 @@ func PrintBanner(version string) {
 	fmt.Print(orcaStr(out))
 	fmt.Printf("\n  %s  %s\n\n",
 		out.String("pgxcli v"+version).Foreground(green).Bold().String(),
-		out.String("\\help for help, \\q to quit").Foreground(out.Color("240")).String(),
+		out.String("\\q to quit").Foreground(out.Color("240")).String(),
 	)
 }
