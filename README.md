@@ -2,13 +2,11 @@
 <a id="readme-top"></a>
 
 <!-- PROJECT SHIELDS -->
-<!-- [![Contributors][contributors-shield]][contributors-url] -->
-<!-- [![Forks][forks-shield]][forks-url] -->
-![CLI](https://img.shields.io/badge/CLI-%23000000?style=for-the-badge&logo=iterm2&logoColor=white)
-[![Stargazers][stars-shield]][stars-url]
+![CLI][cli-shield]
+![pgxcli][pgxcli-shield]
 
-[![MIT License][license-shield]][license-url]
-![postgres](https://img.shields.io/badge/PostgreSQL-7B36ED.svg?style=for-the-badge&logoColor=white)
+![Go][go-shield]
+![PostgreSQL][postgres-shield]
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
@@ -144,25 +142,17 @@ For configuration documentation, see the [docs][config-ref]
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/Balaji01-4D/pgxcli.svg?style=for-the-badge
-[contributors-url]: https://github.com/Balaji01-4D/pgxcli/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Balaji01-4D/pgxcli.svg?style=for-the-badge
-[forks-url]: https://github.com/Balaji01-4D/pgxcli/network/members
-[stars-shield]:  	https://img.shields.io/badge/Pgxcli-7B36ED?style=for-the-badge&logo=database&logoColor=white
-[stars-url]: https://github.com/Balaji01-4D/pgxcli/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Balaji01-4D/pgxcli.svg?style=for-the-badge?style=for-the-badge&color=8A2BE2&labelColor=8A2BE2&logoColor=white
-[issues-url]: https://github.com/Balaji01-4D/pgxcli/issues
-[license-shield]: https://img.shields.io/badge/Go-%23000000?style=for-the-badge&logo=go&logoColor=white
-[license-url]: https://github.com/Balaji01-4D/pgxcli/blob/main/LICENSE
+[cli-shield]: https://img.shields.io/badge/CLI-%23000000?style=for-the-badge&logo=iterm2&logoColor=white
+[pgxcli-shield]: https://img.shields.io/badge/Pgxcli-7B36ED?style=for-the-badge&logo=database&logoColor=white
+[go-shield]: https://img.shields.io/badge/Go-%23000000?style=for-the-badge&logo=go&logoColor=white
+[postgres-shield]: https://img.shields.io/badge/PostgreSQL-7B36ED.svg?style=for-the-badge&logoColor=white
 
-[go-url]: https://go.dev/
 [pgx-url]: https://github.com/jackc/pgx
 [cobra-url]: https://github.com/spf13/cobra
 [viper-url]: https://github.com/spf13/viper
 [go-pretty-url]: https://github.com/jedib0t/go-pretty
 [go-prompter-url]: https://github.com/jedib0t/go-prompter
 [pg-query-url]: https://github.com/pganalyze/pg_query_go
-[cli-reference-url]: https://github.com/Balaji01-4D/pgxcli/blob/main/docs/src/content/docs/reference/cli-reference.md
 [pgcli-url]: https://github.com/dbcli/pgcli
 [cli-ref]: https://pgxcli.vercel.app/reference/cli-reference/
 [config-ref]: https://pgxcli.vercel.app/guides/configuration/
