@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"errors"
+	"regexp"
+	"strings"
 
 	"github.com/balaji01-4d/pgxcli/internal/app/commands"
 	"github.com/balaji01-4d/pgxcli/internal/config"
@@ -77,9 +79,28 @@ func applyReaderOptions(r *pgxReader, config *config.Config, histories []prompt.
 	if err != nil {
 		return err
 	}
+	r.prompt.SetTerminationChecker(terminationCheckerPsql())
 	r.prompt.SetSyntaxHighlighter(highlighter)
 	r.prompt.SetHistory(histories)
 	return nil
+}
+
+func terminationCheckerPsql() prompt.TerminationChecker {
+	return func(input string) bool {
+		reSqlComments := regexp.MustCompile(`(/\*.*\*/|--[^\n]*\n|--[^\n]*$)`)
+		input = reSqlComments.ReplaceAllString(input, "")
+		input = strings.TrimSpace(input)
+
+		// SQLs end with a ';'
+		if strings.HasSuffix(input, ";") {
+			return true
+		}
+		// SQL command can begin with a '\'
+		if strings.HasPrefix(input, "\\") {
+			return true
+		}
+		return false
+	}
 }
 
 func detectTerminalColorProfile() string {
