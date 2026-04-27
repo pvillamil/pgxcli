@@ -17,6 +17,7 @@ const sidebars: SidebarsConfig = {
       label: 'Usage Guides',
       items: [
         'guides/connecting',
+        'guides/features',
         'guides/configuration',
         'guides/special-commands',
       ],
