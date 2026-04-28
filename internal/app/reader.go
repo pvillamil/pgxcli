@@ -87,8 +87,8 @@ func applyReaderOptions(r *pgxReader, config *config.Config, histories []prompt.
 
 func terminationCheckerPsql() prompt.TerminationChecker {
 	return func(input string) bool {
-		reSqlComments := regexp.MustCompile(`(/\*.*\*/|--[^\n]*\n|--[^\n]*$)`)
-		input = reSqlComments.ReplaceAllString(input, "")
+		reSQLComments := regexp.MustCompile(`(/\*.*\*/|--[^\n]*\n|--[^\n]*$)`)
+		input = reSQLComments.ReplaceAllString(input, "")
 		input = strings.TrimSpace(input)
 
 		// SQLs end with a ';'
