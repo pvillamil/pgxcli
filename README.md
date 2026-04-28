@@ -180,5 +180,5 @@ For configuration documentation, see the [docs][config-ref]
 [pgcli-url]: https://github.com/dbcli/pgcli
 [cli-ref]: https://pgxcli.vercel.app/reference/cli-reference/
 [config-ref]: https://pgxcli.vercel.app/guides/configuration/
-[install-ref]: https://pgxcli.vercel.app/guides/getting-started/
+[install-ref]: https://pgxcli.vercel.app/docs/guides/getting-started#installation
 [releases-url]: https://github.com/Balaji01-4D/pgxcli/releases
