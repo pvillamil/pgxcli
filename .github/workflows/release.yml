@@ -1,238 +1,135 @@
 name: Release
+run-name: ${{ inputs.tag_name }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
     inputs:
       tag_name:
         required: true
         type: string
-      platforms:
-        default: "linux,macos,windows"
-        type: string
-
-permissions:
-  contents: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}
-  cancel-in-progress: false
+        description: "Release tag (e.g. v0.1.0)"
 
 jobs:
-  validate-tag-name:
+  validate-tag:
     runs-on: ubuntu-latest
     steps:
-      - name: Validate tag name format
+      - name: Validate tag format
         env:
-          TAG_NAME: ${{ inputs.tag_name || github.ref_name }}
+          TAG_NAME: ${{ inputs.tag_name }}
         run: |
-          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
-            echo "Invalid tag name format: $TAG_NAME (expected vX.Y.Z)"
+          if [[ ! "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid tag format. Must be v1.2.3"
             exit 1
           fi
 
-  linux:
-    needs: validate-tag-name
-    runs-on: ubuntu-latest
-    if: ${{ !inputs.platforms || contains(inputs.platforms, 'linux') }}
-    env:
-      TAG_NAME: ${{ inputs.tag_name || github.ref_name }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Install GoReleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: "~> v2"
-          install-only: true
-
-      - name: Create temporary tag
-        if: github.event_name == 'workflow_dispatch'
-        run: git tag "$TAG_NAME"
-
-      - name: Build release binaries
-        run: bash script/release --local "$TAG_NAME" --platform linux
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist-linux
-          if-no-files-found: error
-          retention-days: 7
-          path: |
-            dist/*.tar.gz
-            dist/*.rpm
-            dist/*.deb
-            dist/*.apk
-            dist/*.zst
-
-  macos:
-    needs: validate-tag-name
-    runs-on: macos-latest
-    if: ${{ !inputs.platforms || contains(inputs.platforms, 'macos') }}
-    env:
-      TAG_NAME: ${{ inputs.tag_name || github.ref_name }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Install GoReleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: "~> v2"
-          install-only: true
-
-      - name: Create temporary tag
-        if: github.event_name == 'workflow_dispatch'
-        run: git tag "$TAG_NAME"
-
-      - name: Build release binaries
-        run: bash script/release --local "$TAG_NAME" --platform macos
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dist-darwin
-          if-no-files-found: error
-          retention-days: 7
-          path: |
-            dist/*.tar.gz
-            dist/*.zip
-
-  windows:
-    needs: validate-tag-name
+  # ── Job 1: Build MSI on Windows ──────────────────────────────────────
+  build-msi:
+    needs: validate-tag
     runs-on: windows-2022
-    if: ${{ !inputs.platforms || contains(inputs.platforms, 'windows') }}
-    env:
-      TAG_NAME: ${{ inputs.tag_name || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          fetch-depth: 0
+          go-version-file: 'go.mod'
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-          cache: true
-
-      - name: Install GoReleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: "~> v2"
-          install-only: true
-
-      - name: Create temporary tag
-        shell: bash
-        run: git tag "$TAG_NAME"
-        if: github.event_name == 'workflow_dispatch'
-
-      - name: Build release binaries
-        shell: bash
-        run: bash script/release --local "$TAG_NAME" --platform windows
+      - name: Build Windows binary
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ inputs.tag_name }}
+        shell: bash
+        run: |
+          VERSION="${TAG_NAME#v}"
+          GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build \
+            -ldflags "-s -w -X main.version=${VERSION} -X main.commit=${GITHUB_SHA}" \
+            -o build/windows/amd64/pgxcli.exe \
+            ./cmd/pgxcli
 
       - name: Set up MSBuild
-        id: setupmsbuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Install WiX Toolset
-        run: choco install wixtoolset -y --no-progress
-        shell: pwsh
-
-      - name: Build MSI
-        shell: bash
+      - name: Build MSI (x64)
         env:
-          MSBUILD_PATH: ${{ steps.setupmsbuild.outputs.msbuildPath }}
-          VERSION: ${{ env.TAG_NAME }}
+          TAG_NAME: ${{ inputs.tag_name }}
+        shell: bash
         run: |
-          version="${VERSION#v}"
-          for ZIP_FILE in dist/pgxcli_*_windows_*.zip; do
-            MSI_NAME="$(basename "$ZIP_FILE" ".zip")"
-            case "$MSI_NAME" in
-            *_amd64 )
-              source_dir="$PWD/dist/pgxcli-windows_windows_amd64_v1/"
-              platform="x64"
-              ;;
-            * )
-              printf "unsupported architecture: %s\n" "$MSI_NAME" >&2
-              exit 1
-              ;;
-            esac
-            "${MSBUILD_PATH}\\MSBuild.exe" build/windows/pgxcli.wixproj \
-              -p:SourceDir="$source_dir" \
-              -p:OutputPath="$PWD/dist" \
-              -p:OutputName="pgxcli_${version}_windows_amd64" \
-              -p:ProductVersion="$version" \
-              -p:Platform="$platform" \
-              -p:Configuration=Release
-          done
+          VERSION="${TAG_NAME#v}"
+          msbuild build/windows/pgxcli.wixproj \
+            -p:Configuration=Release \
+            -p:Platform=x64 \
+            -p:SourceDir="$PWD/build/windows/amd64/" \
+            -p:OutputPath="$PWD/dist" \
+            -p:OutputName="pgxcli_${VERSION}_windows_amd64" \
+            -p:ProductVersion="$VERSION"
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: dist-windows
+          name: windows-msi
           if-no-files-found: error
           retention-days: 7
-          path: |
-            dist/*.zip
-            dist/*.msi
+          path: dist/*.msi
 
-  release:
+  # ── Job 2: GoReleaser draft release ──────────────────────────────────
+  goreleaser:
+    needs: validate-tag
     runs-on: ubuntu-latest
-    needs: [linux, macos, windows]
-    if: always() && !contains(needs.*.result, 'failure')
-    env:
-      TAG_NAME: ${{ inputs.tag_name || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          pattern: dist-*
-          path: dist/
-          merge-multiple: true
+          go-version-file: 'go.mod'
 
-      - name: Generate checksums
-        run: |
-          cd dist
-          VERSION="${TAG_NAME#v}"
-          shasum -a 256 pgxcli_* > "pgxcli_${VERSION}_checksums.txt"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
-          tag_name: ${{ env.TAG_NAME }}
-          draft: true
-          prerelease: ${{ contains(env.TAG_NAME, '-') }}
-          generate_release_notes: true
-          files: |
-            dist/*.tar.gz
-            dist/*.zip
-            dist/*.msi
-            dist/*.deb
-            dist/*.rpm
-            dist/*.apk
-            dist/*.zst
-            dist/*checksums*.txt
+          version: v2.13.1
+          install-only: true
+
+      - name: Create temporary tag
+        env:
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: git tag "$TAG_NAME"
+
+      - name: Run GoReleaser (creates draft)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: goreleaser release --clean
+
+  # ── Job 3: Upload MSI to draft + publish ─────────────────────────────
+  publish:
+    needs: [build-msi, goreleaser]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download MSI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-msi
+          path: dist/
+
+      - name: Upload MSI to draft release + publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ inputs.tag_name }}
+        run: |
+          # upload MSI to the existing draft release
+          gh release upload "$TAG_NAME" dist/*.msi
+
+          # now publish the draft
+          gh release edit "$TAG_NAME" --draft=false
