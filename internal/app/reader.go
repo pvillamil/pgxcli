@@ -19,7 +19,7 @@ const (
 )
 
 var builtinsCommand = map[string]func(){
-	"clear": commands.ClearScreen,
+	"\\clear": commands.ClearScreen,
 }
 
 var chromaFormatter = detectTerminalColorProfile()

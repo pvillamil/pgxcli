@@ -25,12 +25,13 @@ func init() {
 func registerSpecialCommands() {
 	pgxspecial.RegisterCommand(pgxspecial.SpecialCommandRegistry{
 		Cmd:         "\\q",
+		Alias:       []string{"\\quit", "\\exit"},
 		Syntax:      "\\q",
 		Description: "Quit Pgxcli",
 		Handler: func(_ context.Context, _ database.Queryer, _ string, _ bool) (pgxspecial.SpecialCommandResult, error) {
 			return ExitAction{}, nil
 		},
-		CaseSensitive: true,
+		CaseSensitive: false,
 	})
 
 	pgxspecial.RegisterCommand(pgxspecial.SpecialCommandRegistry{
