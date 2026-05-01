@@ -39,7 +39,6 @@ func (f *forcePromptFlag) bind(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP((*bool)(f), "password", "W", false, "Force password prompt")
 }
 
-
 // neverPromptFlag refers to -w / --no-password for enforcing no prompt for passowrd.
 type neverPromptFlag bool
 
@@ -47,14 +46,12 @@ func (f *neverPromptFlag) bind(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP((*bool)(f), "no-password", "w", false, "never prompt for the password")
 }
 
-
 // debugFlag use to debug application.
 type debugFlag bool
 
 func (f *debugFlag) bind(cmd *cobra.Command) {
 	cmd.Flags().BoolVar((*bool)(f), "debug", false, "Enable debug mode for verbose logging.")
 }
-
 
 // interactiveConnFlag launches a form for filling the database connection parameters.
 type interactiveConnFlag bool
