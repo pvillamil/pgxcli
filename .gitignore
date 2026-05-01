@@ -4,6 +4,7 @@
 /node_modules
 /dist
 /coverage
+profile.cov
 /.env
 /.vscode
 /prompts
