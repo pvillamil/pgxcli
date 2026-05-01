@@ -21,7 +21,6 @@ const (
 	SyntaxStyleCatppuccinMacchiato SyntaxHighlightStyle = "catppuccin-macchiato"
 	SyntaxStyleCatppuccinMocha     SyntaxHighlightStyle = "catppuccin-mocha"
 	SyntaxStyleColorful            SyntaxHighlightStyle = "colorful"
-	SyntaxStyleDarcula             SyntaxHighlightStyle = "darcula" //nolint:misspell
 	SyntaxStyleDoomOne             SyntaxHighlightStyle = "doom-one"
 	SyntaxStyleDoomOne2            SyntaxHighlightStyle = "doom-one2"
 	SyntaxStyleDracula             SyntaxHighlightStyle = "dracula"
@@ -104,7 +103,6 @@ var validSyntaxHighlightStyles = map[SyntaxHighlightStyle]struct{}{
 	SyntaxStyleCatppuccinMacchiato: {},
 	SyntaxStyleCatppuccinMocha:     {},
 	SyntaxStyleColorful:            {},
-	SyntaxStyleDarcula:             {},
 	SyntaxStyleDoomOne:             {},
 	SyntaxStyleDoomOne2:            {},
 	SyntaxStyleDracula:             {},
