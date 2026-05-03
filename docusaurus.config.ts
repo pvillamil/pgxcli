@@ -36,6 +36,7 @@ const config: Config = {
 
   url: 'https://pgxcli.vercel.app',
   baseUrl: '/',
+  clientModules: ['./src/theme/vercel-analytics.ts'],
 
   onBrokenLinks: 'warn',
   markdown: {
