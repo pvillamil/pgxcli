@@ -153,9 +153,13 @@ func TestHistorySaveHistory_PrunesWhenOverLimit(t *testing.T) {
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
 	assert.Len(t, lines, maxHistoryLines)
 
-	var mostRecentCommand prompt.HistoryCommand
-	assert.NoError(t, json.Unmarshal([]byte(lines[maxHistoryLines-1]), &mostRecentCommand))
-	assert.Equal(t, entries[len(entries)-1], mostRecentCommand)
+	var firstCommand prompt.HistoryCommand
+	assert.NoError(t, json.Unmarshal([]byte(lines[0]), &firstCommand))
+	assert.Equal(t, entries[len(entries)-maxHistoryLines], firstCommand)
+
+	var lastCommand prompt.HistoryCommand
+	assert.NoError(t, json.Unmarshal([]byte(lines[maxHistoryLines-1]), &lastCommand))
+	assert.Equal(t, entries[len(entries)-1], lastCommand)
 }
 
 func TestLoadHistory(t *testing.T) {
