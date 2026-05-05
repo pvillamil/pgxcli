@@ -5,12 +5,15 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/balaji01-4d/pgxcli/internal/database/result"
 	"github.com/balaji01-4d/pgxspecial"
 )
+
+const nilPlaceholder = "(nil)"
 
 // Client provides high-level connection management and SQL execution operations.
 type Client struct {
@@ -102,47 +105,53 @@ func (c *Client) ChangeDatabase(ctx context.Context, dbName string) error {
 
 // ParsePrompt resolves prompt placeholders using current connection metadata.
 func (c *Client) ParsePrompt(str string) string {
-	str = strings.ReplaceAll(str, "\\t", c.now.Format("02/06/2006 15:04:05"))
+	var user, host, shortHost, db, port string
+
+	t := c.now.Format("02/06/2006 15:04:05")
+
 	if c.executor == nil {
-		str = strings.ReplaceAll(str, "\\u", "(nil)")
-		str = strings.ReplaceAll(str, "\\H", "(nil)")
-		str = strings.ReplaceAll(str, "\\h", "(nil)")
-		str = strings.ReplaceAll(str, "\\d", "(nil)")
-		str = strings.ReplaceAll(str, "\\p", "5432")
-		str = strings.ReplaceAll(str, "\\n", "\n")
-		return str
-	}
-
-	if c.executor.User != "" {
-		str = strings.ReplaceAll(str, "\\u", c.executor.User)
+		user, host, shortHost, db, port = nilPlaceholder, nilPlaceholder, nilPlaceholder, nilPlaceholder, "5432"
 	} else {
-		str = strings.ReplaceAll(str, "\\u", "(nil)")
+		if c.executor.User != "" {
+			user = c.executor.User
+		} else {
+			user = nilPlaceholder
+		}
+
+		if c.executor.Host != "" {
+			host = c.executor.Host
+			idx := strings.IndexByte(host, '.')
+			if idx == -1 {
+				shortHost = host
+			} else {
+				shortHost = host[:idx]
+			}
+		} else {
+			host, shortHost = nilPlaceholder, nilPlaceholder
+		}
+
+		if c.currentDB != "" {
+			db = c.currentDB
+		} else {
+			db = nilPlaceholder
+		}
+
+		if c.executor.Port != 0 {
+			port = strconv.FormatUint(uint64(c.executor.Port), 10)
+		} else {
+			port = "5432"
+		}
 	}
 
-	if c.executor.Host != "" {
-		str = strings.ReplaceAll(str, "\\H", c.executor.Host)
-		str = strings.ReplaceAll(str, "\\h", func() string {
-			return strings.Split(c.executor.Host, ".")[0]
-		}())
-	} else {
-		str = strings.ReplaceAll(str, "\\H", "(nil)")
-		str = strings.ReplaceAll(str, "\\h", "(nil)")
-	}
-
-	if c.currentDB != "" {
-		str = strings.ReplaceAll(str, "\\d", c.currentDB)
-	} else {
-		str = strings.ReplaceAll(str, "\\d", "(nil)")
-	}
-	if c.executor.Port != 0 {
-		str = strings.ReplaceAll(str, "\\p", fmt.Sprintf("%d", c.executor.Port))
-	} else {
-		str = strings.ReplaceAll(str, "\\p", "5432")
-	}
-
-	str = strings.ReplaceAll(str, "\\n", "\n")
-
-	return str
+	return strings.NewReplacer(
+		`\t`, t,
+		`\u`, user,
+		`\H`, host,
+		`\h`, shortHost,
+		`\d`, db,
+		`\p`, port,
+		`\n`, "\n",
+	).Replace(str)
 }
 
 // GetUser returns the current connection user name.
