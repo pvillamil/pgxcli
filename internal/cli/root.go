@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/term"
+
 	"github.com/balaji01-4d/pgxcli/internal/app"
 	"github.com/balaji01-4d/pgxcli/internal/config"
 	"github.com/balaji01-4d/pgxcli/internal/database"
@@ -394,13 +396,33 @@ func parsePositionalDBAndUser(args []string) (string, string) {
 }
 
 func promptPassword() (string, error) {
-	var pwd string
 	fmt.Print("Password: ")
-	_, err := fmt.Scanln(&pwd)
+	fd := int(os.Stdin.Fd())
+	oldState, err := term.GetState(fd)
+	if err != nil {
+		// stdin is not a TTY — fall back to normal line input
+		var pwd string
+		_, err := fmt.Scanln(&pwd)
+		if err != nil {
+			return "", err
+		}
+		return pwd, nil
+	}
+
+	// Put terminal in raw mode (echo off) for secure password entry.
+	if _, err := term.MakeRaw(fd); err != nil {
+		return "", fmt.Errorf("failed to set raw terminal mode: %w", err)
+	}
+
+	pwd, err := term.ReadPassword(fd)
+	// Restore terminal to its original state no matter what.
+	_ = term.Restore(fd, oldState)
+	fmt.Println()
+
 	if err != nil {
 		return "", err
 	}
-	return pwd, nil
+	return string(pwd), nil
 }
 
 func mustParsePort(port string) (uint16, error) {
