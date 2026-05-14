@@ -68,21 +68,16 @@ func (p *pgxCLI) execute(ctx context.Context, client *database.Client, query str
 		return ui.ReadyMsg{Prefix: prefix} // this is used to unblock input after executing a command
 	}
 
-	trimmed := strings.TrimSpace(query)
-	if trimmed == "" {
-		return promptReady
-	}
+	p.logger.Debug("received command", "command_length", len(query))
 
-	p.logger.Debug("received command", "command_length", len(trimmed))
-
-	if cmd, ok := builtinsCommand[trimmed]; ok {
-		p.logger.Debug("executing builtin command", "command", trimmed)
+	if cmd, ok := builtinsCommand[query]; ok {
+		p.logger.Debug("executing builtin command", "command", query)
 		cmd()
 		return promptReady
 	}
 
 	return func() tea.Msg {
-		metaResult, okay, err := client.ExecuteSpecial(ctx, trimmed)
+		metaResult, okay, err := client.ExecuteSpecial(ctx, query)
 		if err != nil {
 			p.logger.Error("error executing special command", "error", err)
 			return ui.ExecCmdMsg{Cmd: tea.Sequence(p.printError(err), promptReady)}
@@ -110,7 +105,7 @@ func (p *pgxCLI) execute(ctx context.Context, client *database.Client, query str
 		}
 
 		p.logger.Debug("executing query")
-		stmts := parser.SplitSQLStatements(trimmed)
+		stmts := parser.SplitSQLStatements(query)
 		cmds := make([]tea.Cmd, 0, len(stmts)+1) // +1 for prompt ready
 
 	StatementsLoop:

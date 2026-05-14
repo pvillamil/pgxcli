@@ -111,6 +111,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) handleInput() (tea.Model, tea.Cmd) {
 	input := m.input.Value()            // used when displaying, history, and prev input.
 	trimmed := strings.TrimSpace(input) // only used when executing commands.
+	if trimmed == "" {
+		return m, nil
+	}
+
 	highlightedInput := postgresHighlighter("monokai")(input)
 
 	userContent := lipgloss.JoinHorizontal(lipgloss.Left, userInputStyle.Render(m.input.Prompt), highlightedInput)
