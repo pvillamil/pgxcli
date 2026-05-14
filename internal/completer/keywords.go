@@ -1,11 +1,11 @@
-package parser
+package completer
 
 import (
 	_ "embed"
 	"strings"
 )
 
-//go:embed pg_kw.txt
+//go:embed keywords.txt
 var pgKeywords string
 
 // LoadPgKeywords returns PostgreSQL keyword suggestions used by autocompletion.

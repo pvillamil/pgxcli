@@ -16,3 +16,4 @@ dist/
 
 .docusaurus/
 build/
+pgxcli

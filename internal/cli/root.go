@@ -11,10 +11,10 @@ import (
 	"golang.org/x/term"
 
 	"github.com/balaji01-4d/pgxcli/internal/app"
+	"github.com/balaji01-4d/pgxcli/internal/completer"
 	"github.com/balaji01-4d/pgxcli/internal/config"
 	"github.com/balaji01-4d/pgxcli/internal/database"
 	"github.com/balaji01-4d/pgxcli/internal/logger"
-	"github.com/balaji01-4d/pgxcli/internal/parser"
 	"github.com/balaji01-4d/pgxcli/internal/ui"
 	"github.com/spf13/cobra"
 )
@@ -37,9 +37,6 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 		interactiveConnFlag interactiveConnFlag
 	)
 
-	// pgKws stores the postgres keywords from internal/parser/pg_kw.txt
-	var pgKws []string
-
 	rootCmd := &cobra.Command{
 		Use:     "pgxcli [DBNAME] [USERNAME]",
 		Short:   "Interactive PostgreSQL command-line client for querying and managing databases.",
@@ -47,12 +44,7 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 		Args:    cobra.MaximumNArgs(2), // Database name and username are optional example: pgxcli mydb myuser
 
 		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
-			keywords, err := loadRuntimeDependencies(cliCtx, bool(debugFlag))
-			if err != nil {
-				return err
-			}
-			pgKws = keywords
-			return nil
+			return loadRuntimeDependencies(cliCtx, bool(debugFlag))
 		},
 
 		PreRunE: func(cmd *cobra.Command, args []string) error {
@@ -74,7 +66,7 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 			if err := ensureConnected(cliCtx); err != nil {
 				return err
 			}
-			return initApplication(cliCtx, pgKws)
+			return initApplication(cliCtx)
 		},
 
 		RunE: func(_ *cobra.Command, _ []string) error {
@@ -135,25 +127,25 @@ type connectionParams struct {
 	password string
 }
 
-// loadRuntimeDependencies loads configuration, initializes logger, and loads PostgreSQL keywords.
-func loadRuntimeDependencies(cliCtx *CliContext, debug bool) ([]string, error) {
+// loadRuntimeDependencies loads configuration, initializes logger, and sets up pager.
+func loadRuntimeDependencies(cliCtx *CliContext, debug bool) error {
 	cfg, err := config.Load()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	cliCtx.config = cfg
 
 	if err := cliCtx.Printer.SetPagerMode(cfg.Main.Pager); err != nil { // Printer is initialized in main.go.
-		return nil, err
+		return err
 	}
 
 	initializedLogger, err := logger.InitLogger(debug, cfg.Main.LogFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	cliCtx.Logger = initializedLogger
 
-	return parser.LoadPgKeywords(), nil
+	return nil
 }
 
 func resolveConnectionParams(
@@ -338,14 +330,14 @@ func ensureConnected(cliCtx *CliContext) error {
 
 // initApplication Initializes the app,
 // which includes setting up the logger, config and autocompleter with PostgreSQL keywords.
-func initApplication(cliCtx *CliContext, pgKeywords []string) error {
-	pgxCLI, err := app.New(cliCtx.config, cliCtx.Printer, cliCtx.Logger.Logger)
+func initApplication(cliCtx *CliContext) error {
+	completer := completer.New(cliCtx.Logger.Logger)
+	pgxCLI, err := app.New(cliCtx.config, cliCtx.Printer, cliCtx.Logger.Logger, completer)
 	if err != nil {
 		cliCtx.Logger.Error("Failed to initialize app", "error", err)
 		return err
 	}
 
-	pgxCLI.SetAutoCompleteKeywords(pgKeywords)
 	cliCtx.App = pgxCLI
 	return nil
 }
