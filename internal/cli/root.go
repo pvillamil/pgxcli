@@ -304,7 +304,8 @@ func connectWithFields(
 	}
 
 	cliCtx.Logger.Debug("Connection failed, prompting for password")
-	pwd, err := promptPassword()
+	fmt.Fprintln(os.Stderr, "Wrong password, try again.")
+	pwd, err := promptPasswordRetry()
 	if err != nil {
 		return err
 	}
@@ -408,6 +409,33 @@ func promptPassword() (string, error) {
 
 	pwd, err := term.ReadPassword(fd)
 	// Restore terminal to its original state no matter what.
+	_ = term.Restore(fd, oldState)
+	fmt.Println()
+
+	if err != nil {
+		return "", err
+	}
+	return string(pwd), nil
+}
+
+func promptPasswordRetry() (string, error) {
+	fmt.Print("Enter password again: ")
+	fd := int(os.Stdin.Fd())
+	oldState, err := term.GetState(fd)
+	if err != nil {
+		var pwd string
+		_, err := fmt.Scanln(&pwd)
+		if err != nil {
+			return "", err
+		}
+		return pwd, nil
+	}
+
+	if _, err := term.MakeRaw(fd); err != nil {
+		return "", fmt.Errorf("failed to set raw terminal mode: %w", err)
+	}
+
+	pwd, err := term.ReadPassword(fd)
 	_ = term.Restore(fd, oldState)
 	fmt.Println()
 
