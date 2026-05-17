@@ -39,11 +39,11 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 	)
 
 	rootCmd := &cobra.Command{
-		Use:     "pgxcli [DBNAME] [USERNAME]",
-		Short:   "Interactive PostgreSQL command-line client for querying and managing databases.",
-		Version: version,
-		Args:    cobra.MaximumNArgs(2), // Database name and username are optional example: pgxcli mydb myuser
-		SilenceUsage: true,
+		Use:           "pgxcli [DBNAME] [USERNAME]",
+		Short:         "Interactive PostgreSQL command-line client for querying and managing databases.",
+		Version:       version,
+		Args:          cobra.MaximumNArgs(2), // Database name and username are optional example: pgxcli mydb myuser
+		SilenceUsage:  true,
 		SilenceErrors: true,
 
 		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
@@ -364,7 +364,6 @@ func initApplication(cliCtx *CliContext) error {
 	return nil
 }
 
-
 // when database is given as flag then the next argument as user
 func resolveDBAndUser(dbnameOpt, userOpt, argDB, argUser string) (string, string) {
 	// Case: cmd -d database user
@@ -447,7 +446,6 @@ func getDefaultUser() string {
 	}
 	return osUser
 }
-
 
 func osUsername() string {
 	currentUser, err := user.Current()
