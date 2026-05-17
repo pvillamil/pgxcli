@@ -11,6 +11,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/balaji01-4d/pgxcli/internal/app"
+	"github.com/balaji01-4d/pgxcli/internal/app/renderer"
 	"github.com/balaji01-4d/pgxcli/internal/completer"
 	"github.com/balaji01-4d/pgxcli/internal/config"
 	"github.com/balaji01-4d/pgxcli/internal/database"
@@ -42,6 +43,8 @@ func NewRootCmd(ctx context.Context, cliCtx *CliContext) *cobra.Command {
 		Short:   "Interactive PostgreSQL command-line client for querying and managing databases.",
 		Version: version,
 		Args:    cobra.MaximumNArgs(2), // Database name and username are optional example: pgxcli mydb myuser
+		SilenceUsage: true,
+		SilenceErrors: true,
 
 		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			return loadRuntimeDependencies(cliCtx, bool(debugFlag))
@@ -316,7 +319,7 @@ func connectWithFields(
 	}
 
 	cliCtx.Logger.Debug("Connection failed, prompting for password")
-	fmt.Fprintln(os.Stderr, "Wrong password, try again.")
+	renderer.Error(fmt.Errorf("Wrong password, try again."), os.Stderr)
 	pwd, err := promptPassword("Enter password again")
 	if err != nil {
 		return err
