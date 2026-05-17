@@ -27,7 +27,7 @@ func main() {
 	)
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		renderer.Error(err, os.Stderr)
+		_ = renderer.Error(err, os.Stderr)
 		os.Exit(1)
 	}
 }

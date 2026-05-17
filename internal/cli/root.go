@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	version = "0.1.0"
+	version = "0.1.1"
 	osUser  = osUsername()
 )
 
@@ -322,7 +322,10 @@ func connectWithFields(
 	}
 
 	cliCtx.Logger.Debug("Connection failed, prompting for password")
-	renderer.Error(fmt.Errorf("Wrong password, try again."), os.Stderr)
+	if wErr := renderer.Error(fmt.Errorf("Wrong password, try again."), os.Stderr); wErr != nil {
+		return wErr
+	}
+
 	pwd, err := promptPassword("Enter password again")
 	if err != nil {
 		return err
