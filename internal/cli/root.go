@@ -273,7 +273,7 @@ func connectWithFields(
 	}
 
 	if forcePrompt && password == "" {
-		pwd, err := promptPassword()
+		pwd, err := promptPassword("Enter password")
 		if err != nil {
 			return err
 		}
@@ -305,7 +305,7 @@ func connectWithFields(
 
 	cliCtx.Logger.Debug("Connection failed, prompting for password")
 	fmt.Fprintln(os.Stderr, "Wrong password, try again.")
-	pwd, err := promptPasswordRetry()
+	pwd, err := promptPassword("Enter password again")
 	if err != nil {
 		return err
 	}
@@ -388,8 +388,8 @@ func parsePositionalDBAndUser(args []string) (string, string) {
 	return db, user
 }
 
-func promptPassword() (string, error) {
-	fmt.Print("Password: ")
+func promptPassword(s string) (string, error) {
+	fmt.Printf("%s: ", s)
 	fd := int(os.Stdin.Fd())
 	oldState, err := term.GetState(fd)
 	if err != nil {
@@ -409,33 +409,6 @@ func promptPassword() (string, error) {
 
 	pwd, err := term.ReadPassword(fd)
 	// Restore terminal to its original state no matter what.
-	_ = term.Restore(fd, oldState)
-	fmt.Println()
-
-	if err != nil {
-		return "", err
-	}
-	return string(pwd), nil
-}
-
-func promptPasswordRetry() (string, error) {
-	fmt.Print("Enter password again: ")
-	fd := int(os.Stdin.Fd())
-	oldState, err := term.GetState(fd)
-	if err != nil {
-		var pwd string
-		_, err := fmt.Scanln(&pwd)
-		if err != nil {
-			return "", err
-		}
-		return pwd, nil
-	}
-
-	if _, err := term.MakeRaw(fd); err != nil {
-		return "", fmt.Errorf("failed to set raw terminal mode: %w", err)
-	}
-
-	pwd, err := term.ReadPassword(fd)
 	_ = term.Restore(fd, oldState)
 	fmt.Println()
 

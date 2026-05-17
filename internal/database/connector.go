@@ -24,7 +24,7 @@ func NewPGConnectorFromConnString(connString string) (Connector, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &pgConnector{cfg: cfg}, nil
 }
 
@@ -64,7 +64,6 @@ func (c *pgConnector) Password() string {
 // Connect opens a new pgx connection using the connector configuration.
 func (c *pgConnector) Connect(ctx context.Context) (*pgx.Conn, error) {
 	c.cfg.DefaultQueryExecMode = pgx.QueryExecModeExec
-	
 
 	conn, err := pgx.ConnectConfig(ctx, c.cfg)
 	if err != nil {
