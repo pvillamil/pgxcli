@@ -70,7 +70,7 @@ update:
 
 
 
-DOCS_DIR := ../docs-site
+DOCS_DIR := ./docs-site
 VERSION ?= v0.1.1
 
 docs-init:
