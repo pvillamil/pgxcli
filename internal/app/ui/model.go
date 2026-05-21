@@ -266,9 +266,6 @@ func applyEditlineConfig(el *editline.Model, historyFile string, pgKeywords []st
 	)
 	el.AutoComplete = postgresAutocomplete(pgKeywords)
 
-	// Configure multi-line input detection:
-	// A SQL query is only complete (submittable) if it is empty, starts with a backslash
-	// (special command), or ends with a semicolon ';'. Otherwise, Enter should just insert a newline.
 	el.CheckInputComplete = func(entireInput [][]rune, line, col int) bool {
 		var sb strings.Builder
 		for i, rline := range entireInput {
@@ -279,17 +276,14 @@ func applyEditlineConfig(el *editline.Model, historyFile string, pgKeywords []st
 		}
 		input := strings.TrimSpace(sb.String())
 
-		// If input is empty, let it submit (no-op)
 		if input == "" {
 			return true
 		}
 
-		// If it's a special command (e.g. \clear, \d), it's single-line and complete
 		if strings.HasPrefix(input, "\\") {
 			return true
 		}
 
-		// Otherwise, a SQL statement is complete only if it ends with a semicolon
 		return strings.HasSuffix(input, ";")
 	}
 
