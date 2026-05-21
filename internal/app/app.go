@@ -85,7 +85,9 @@ func (p *pgxCLI) execute(ctx context.Context, query string) tea.Cmd {
 			result, quit, err := p.handleSpecialCommand(ctx, metaResult, p.client)
 			if quit {
 				p.logger.Info("REPL exiting via quit command")
-				return ui.ExecCmdMsg{Cmd: tea.Quit}
+				return ui.ExecCmdMsg{Cmd: func() tea.Msg {
+					return ui.QuitRequestMsg{}
+				}}
 			}
 
 			if err != nil {

@@ -24,10 +24,11 @@ import (
 var chromaFormatter = detectTerminalColorProfile()
 
 var (
-	userInputStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#908CAA"))
-	appOutputStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#E0DEF4"))
-	errorOutputStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6B6B"))
-	statusBarStyle   = lipgloss.NewStyle().
+	userInputStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#908CAA"))
+	appOutputStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("#E0DEF4"))
+	errorOutputStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF6B6B"))
+	inputSeparatorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#7b40a0")) // border for input
+	statusBarStyle      = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#908CAA")).
 				Background(lipgloss.Color("#2A273F")).
 				Padding(0, 1)
@@ -39,6 +40,12 @@ type ReadyMsg struct{ Prefix string }
 // ExecCmdMsg is used to dispatch a batch/sequence of commands.
 type ExecCmdMsg struct{ Cmd tea.Cmd }
 
+// QuitRequestMsg signals that the app wants to quit.
+type QuitRequestMsg struct{}
+
+// ConfirmQuitMsg is used internally to finalize quitting.
+type ConfirmQuitMsg struct{}
+
 type cancel func(ctx context.Context) error
 
 type execute func(query string) tea.Cmd
@@ -47,6 +54,7 @@ type Model struct {
 	input         *editline.Model
 	width, height int
 	executing     bool
+	quitting      bool
 	prevUserInput string
 	historyFile   string
 	style         string
@@ -83,30 +91,45 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
+	case QuitRequestMsg:
+		m.quitting = true
+		return m, func() tea.Msg {
+			return ConfirmQuitMsg{}
+		}
+
+	case ConfirmQuitMsg:
+		return m, tea.Quit
+
 	case ReadyMsg:
 		m.executing = false
 		if msg.Prefix != "" {
 			m.input.Prompt = msg.Prefix
 		}
-		m.input.Reset()
+
 		return m, nil
 
 	case ExecCmdMsg:
 		return m, msg.Cmd
 
 	case editline.InputCompleteMsg:
+		if m.executing {
+			return m, nil
+		}
 		return m.handleInput()
 
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.input.SetSize(msg.Width, msg.Height-4)
+		m.input.SetSize(msg.Width, msg.Height-6)
 		return m, nil
 
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "ctrl+d":
+			return m, func() tea.Msg {
+				return QuitRequestMsg{}
+			}
 		case "ctrl+c":
-			m.input.Reset()
 			if m.executing {
 				m.executing = false
 				cancelFn := m.cancel
@@ -118,6 +141,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 
+			m.input.Reset()
 			return m, nil
 		}
 	}
@@ -143,6 +167,7 @@ func (m *Model) handleInput() (tea.Model, tea.Cmd) {
 	m.prevUserInput = input
 	m.executing = true
 	m.input.AddHistoryEntry(input)
+	m.input.Reset()
 
 	return m, tea.Sequence(
 		m.printUserInput(userInputStyle.Render(m.input.Prompt), input),
@@ -161,13 +186,14 @@ func (m *Model) printUserInput(prefix, input string) tea.Cmd {
 }
 
 func (m *Model) View() tea.View {
-	statusStyle := statusBarStyle.Width(m.width)
-	if m.executing {
-		statusBar := statusStyle.AlignVertical(lipgloss.Bottom).Render("pgxcli")
-		return tea.NewView(statusBar)
+	if m.quitting {
+		return tea.NewView("")
 	}
 
-	str := lipgloss.Sprintf("%s\n%s", m.input.View(), statusStyle.Render("pgxcli"))
+	statusStyle := statusBarStyle.Width(m.width)
+	separator := inputSeparatorStyle.Render(strings.Repeat("─", m.width)) // Full-width top + bottom borders for input
+
+	str := lipgloss.Sprintf("%s\n%s\n%s\n%s", separator, m.input.View(), separator, statusStyle.Render("pgxcli"))
 	return tea.NewView(str)
 }
 
