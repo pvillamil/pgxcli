@@ -106,12 +106,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
+			m.input.Reset()
 			if m.executing {
-				m.cancel(context.Background())
 				m.executing = false
+				cancelFn := m.cancel
+				return m, func() tea.Msg {
+					if err := cancelFn(context.Background()); err != nil {
+						return ExecCmdMsg{Cmd: PrintErrCmd(err)}
+					}
+					return nil
+				}
 			}
 
-			m.input.Reset()
 			return m, nil
 		}
 	}
