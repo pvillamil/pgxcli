@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-05-20
+
+### Fixed
+- **hardcoded style**: Removed the hardcoded "monokai" style from the syntax highlighter.
+
 ## [0.1.1] - 2026-05-18
 
 ### Added
