@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"charm.land/bubbles/v2/key"
+	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/Balaji01-4D/bubbline/computil"
@@ -33,8 +34,21 @@ var (
 	errorOutputStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#FF6B6B"))
 
+	userQuerySeparatorStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#B8A2FF"))
+
 	inputSeparatorStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#8B5CF6"))
+
+	spinnerStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#C4B5FD")).
+			PaddingLeft(2).
+			Bold(true)
+
+	spinnerCaptionStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#A78BFA")).
+				Italic(true).
+				Faint(true)
 
 	statusBarStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#C4B5FD")).
@@ -60,6 +74,7 @@ type execute func(query string) tea.Cmd
 
 type Model struct {
 	input         *editline.Model
+	spinner       spinner.Model
 	width, height int
 	executing     bool
 	quitting      bool
@@ -84,8 +99,13 @@ func New(initialPrefix string, pgKeywords []string, historyFile string, style st
 		return nil, fmt.Errorf("applying input config: %w", err)
 	}
 
+	sp := spinner.New()
+	sp.Spinner = spinner.Dot
+	sp.Style = spinnerStyle
+
 	return &Model{
 		input:       el,
+		spinner:     sp,
 		historyFile: historyFile,
 		style:       style,
 		version:     version,
@@ -95,9 +115,9 @@ func New(initialPrefix string, pgKeywords []string, historyFile string, style st
 }
 
 func (m *Model) Init() tea.Cmd {
-	return tea.Sequence(
-		BannerCmd(m.version),
+	return tea.Batch(
 		m.input.Focus(),
+		m.spinner.Tick,
 	)
 }
 
@@ -123,6 +143,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ExecCmdMsg:
 		return m, msg.Cmd
 
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+
 	case editline.InputCompleteMsg:
 		if m.executing {
 			return m, nil
@@ -132,7 +157,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		m.input.SetSize(msg.Width, msg.Height-6)
+		m.input.SetSize(msg.Width, msg.Height-4)
 		return m, nil
 
 	case tea.KeyMsg:
@@ -193,7 +218,10 @@ func (m *Model) printUserInput(prefix, input string) tea.Cmd {
 		highlightedInput = postgresHighlighter(m.style)(input)
 	}
 
+	line := strings.Repeat("─", m.width/2)
+
 	userContent := lipgloss.JoinHorizontal(lipgloss.Left, userInputStyle.Render(prefix), highlightedInput)
+	userContent = lipgloss.JoinVertical(lipgloss.Top, userQuerySeparatorStyle.Render(line), userContent)
 	return tea.Printf("%s", userContent)
 }
 
@@ -206,11 +234,28 @@ func (m *Model) View() tea.View {
 		return tea.NewView("")
 	}
 
+	if m.executing {
+		spinnerLine := lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			m.spinner.View(),
+			spinnerCaptionStyle.Render("Postgresing..."),
+		)
+
+		return tea.NewView(spinnerLine)
+	}
+
 	statusStyle := statusBarStyle.Width(m.width)
 	separator := inputSeparatorStyle.Render(strings.Repeat("─", m.width)) // Full-width top + bottom borders for input
 
-	str := lipgloss.Sprintf("%s\n%s\n%s\n%s", separator, m.input.View(), separator, statusStyle.Render("pgxcli"))
-	return tea.NewView(str)
+	inputView := lipgloss.JoinVertical(
+		lipgloss.Top,
+		separator,
+		m.input.View(),
+		separator,
+		statusStyle.Render("pgxcli "+m.version),
+	)
+
+	return tea.NewView(inputView)
 }
 
 func (m *Model) saveHistory() error {

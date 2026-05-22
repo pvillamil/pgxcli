@@ -355,7 +355,7 @@ func ensureConnected(cliCtx *CliContext) error {
 // which includes setting up the logger, config and autocompleter with PostgreSQL keywords.
 func initApplication(cliCtx *CliContext) error {
 	completer := completer.New(cliCtx.Logger.Logger)
-	pgxCLI, err := app.New(cliCtx.config, cliCtx.Printer, cliCtx.Logger.Logger, completer, cliCtx.Client)
+	pgxCLI, err := app.New(cliCtx.config, cliCtx.Printer, cliCtx.Logger.Logger, completer, cliCtx.Client, version)
 	if err != nil {
 		cliCtx.Logger.Error("Failed to initialize app", "error", err)
 		return err

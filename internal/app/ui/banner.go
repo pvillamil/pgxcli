@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/term"
 )
@@ -93,16 +92,16 @@ func orcaStr() string {
 	return sb.String()
 }
 
-func BannerCmd(version string) tea.Cmd {
+func Banner(version string) string {
 	leftPane := orcaStr()
 
 	rightPane := lipgloss.JoinVertical(
 		lipgloss.Left,
 		secondaryStyle.Render("welcome to ")+
 			primaryStyle.Render("pgxcli ")+
-			mutedStyle.Render("v"+version),
+			mutedStyle.Render("v"+version)+"\n\n",
 
-		accentStyle.Render("Happy Postgresing!"),
+		accentStyle.Render("Happy Postgresing!\n\n"),
 
 		linkStyle.
 			Hyperlink(issueLink).
@@ -110,7 +109,7 @@ func BannerCmd(version string) tea.Cmd {
 	)
 
 	content := lipgloss.JoinHorizontal(
-		lipgloss.Center,
+		lipgloss.Top,
 		leftPane,
 		"      ", // gap between art and text
 		rightPane,
@@ -127,5 +126,5 @@ func BannerCmd(version string) tea.Cmd {
 		banner = lipgloss.Place(w, lipgloss.Height(banner), lipgloss.Center, lipgloss.Top, banner)
 	}
 
-	return tea.Printf("%s\n", banner)
+	return banner
 }

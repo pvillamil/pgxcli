@@ -8,11 +8,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/balaji01-4d/pgxspecial"
 	"github.com/balajz/pgxcli/internal/app/commands"
 	"github.com/balajz/pgxcli/internal/app/renderer"
@@ -47,15 +49,18 @@ type pgxCLI struct {
 	logger    *slog.Logger
 	completer *completer.Completer
 	client    *database.Client
+
+	version string
 }
 
-func New(cfg *config.Config, printer cliio.Printer, logger *slog.Logger, completer *completer.Completer, client *database.Client) (Application, error) {
+func New(cfg *config.Config, printer cliio.Printer, logger *slog.Logger, completer *completer.Completer, client *database.Client, version string) (Application, error) {
 	return &pgxCLI{
 		config:    cfg,
 		logger:    logger,
 		Printer:   printer,
 		completer: completer,
 		client:    client,
+		version:   version,
 	}, nil
 }
 
@@ -141,6 +146,7 @@ func (p *pgxCLI) execute(ctx context.Context, query string) tea.Cmd {
 }
 
 func (p *pgxCLI) Start(ctx context.Context, version string) error {
+	p.printBanner(p.version)
 	executeFunc := func(query string) tea.Cmd {
 		return p.execute(ctx, query)
 	}
@@ -240,6 +246,10 @@ func (p *pgxCLI) Cancel(ctx context.Context) error {
 	defer cancel()
 
 	return p.client.Cancel(ctx)
+}
+
+func (p *pgxCLI) printBanner(version string) {
+	lipgloss.Fprint(os.Stdout, ui.Banner(version)+"\n")
 }
 
 func (p *pgxCLI) handleQueryResult(r result.Result) (tea.Cmd, error) {
