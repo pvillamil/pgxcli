@@ -8,13 +8,14 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/balaji01-4d/pgxspecial"
-	"github.com/balajz/pgxcli/internal/app/commands"
 	"github.com/balajz/pgxcli/internal/app/renderer"
 	"github.com/balajz/pgxcli/internal/app/ui"
 	"github.com/balajz/pgxcli/internal/cliio"
@@ -34,8 +35,8 @@ type Application interface {
 	Close() error
 }
 
-var builtinsCommand = map[string]func(){
-	"\\clear": commands.ClearScreen,
+var builtinsCommand = map[string]func() tea.Cmd{
+	"\\clear": func() tea.Cmd { return tea.ClearScreen },
 }
 
 // pgxCLI is the main implementation of the Application interface.
@@ -47,15 +48,18 @@ type pgxCLI struct {
 	logger    *slog.Logger
 	completer *completer.Completer
 	client    *database.Client
+
+	version string
 }
 
-func New(cfg *config.Config, printer cliio.Printer, logger *slog.Logger, completer *completer.Completer, client *database.Client) (Application, error) {
+func New(cfg *config.Config, printer cliio.Printer, logger *slog.Logger, completer *completer.Completer, client *database.Client, version string) (Application, error) {
 	return &pgxCLI{
 		config:    cfg,
 		logger:    logger,
 		Printer:   printer,
 		completer: completer,
 		client:    client,
+		version:   version,
 	}, nil
 }
 
@@ -69,8 +73,7 @@ func (p *pgxCLI) execute(ctx context.Context, query string) tea.Cmd {
 
 	if cmd, ok := builtinsCommand[query]; ok {
 		p.logger.Debug("executing builtin command", "command", query)
-		cmd()
-		return promptReady
+		return tea.Sequence(cmd(), promptReady)
 	}
 
 	return func() tea.Msg {
@@ -85,7 +88,9 @@ func (p *pgxCLI) execute(ctx context.Context, query string) tea.Cmd {
 			result, quit, err := p.handleSpecialCommand(ctx, metaResult, p.client)
 			if quit {
 				p.logger.Info("REPL exiting via quit command")
-				return ui.ExecCmdMsg{Cmd: tea.Quit}
+				return ui.ExecCmdMsg{Cmd: func() tea.Msg {
+					return ui.QuitRequestMsg{}
+				}}
 			}
 
 			if err != nil {
@@ -139,6 +144,7 @@ func (p *pgxCLI) execute(ctx context.Context, query string) tea.Cmd {
 }
 
 func (p *pgxCLI) Start(ctx context.Context) error {
+	p.printBanner(p.version)
 	executeFunc := func(query string) tea.Cmd {
 		return p.execute(ctx, query)
 	}
@@ -149,6 +155,7 @@ func (p *pgxCLI) Start(ctx context.Context) error {
 		p.completer.GetKeyWords(),
 		p.config.Main.HistoryFile,
 		string(p.config.Main.Style),
+		p.version,
 		executeFunc,
 		p.Cancel,
 	)
@@ -239,6 +246,10 @@ func (p *pgxCLI) Cancel(ctx context.Context) error {
 	return p.client.Cancel(ctx)
 }
 
+func (p *pgxCLI) printBanner(version string) {
+	lipgloss.Fprint(os.Stdout, ui.Banner(version)+"\n")
+}
+
 func (p *pgxCLI) handleQueryResult(r result.Result) (tea.Cmd, error) {
 	res, ok := r.(*result.QueryResult)
 	if !ok {
@@ -268,16 +279,16 @@ func (p *pgxCLI) printViaPager(str string) tea.Cmd {
 	if p.Printer.ShouldUsePager(str) {
 		cmd, ok := cliio.PagerCmd(str)
 		if !ok {
-			return ui.PrintCmd(str)
+			return ui.PrintCmd(str, ui.DefaultStyles().AppOutput)
 		}
 		return ui.ShowPagerCmd(cmd)
 	}
 
-	return ui.PrintCmd(str)
+	return ui.PrintCmd(str, ui.DefaultStyles().AppOutput)
 }
 
 func (p *pgxCLI) printError(err error) tea.Cmd {
-	return ui.PrintErrCmd(err)
+	return ui.PrintErrCmd(err, ui.DefaultStyles().ErrorOutput)
 }
 
 func (p *pgxCLI) Close() error {

@@ -33,9 +33,9 @@ func newStyles(hasDarkBg bool) *styles {
 		lightDark = lipgloss.LightDark(hasDarkBg)
 	)
 
-	s.Red = lightDark(lipgloss.Color("#FE5F86"), lipgloss.Color("#FE5F86"))
-	s.Indigo = lightDark(lipgloss.Color("#5A56E0"), lipgloss.Color("#7571F9"))
-	s.Green = lightDark(lipgloss.Color("#02BA84"), lipgloss.Color("#02BF87"))
+	s.Red = lightDark(lipgloss.Color("#FF6B6B"), lipgloss.Color("#FF6B6B"))
+	s.Indigo = lightDark(lipgloss.Color("#8B5CF6"), lipgloss.Color("#A78BFA"))
+	s.Green = lightDark(lipgloss.Color("#A78BFA"), lipgloss.Color("#C4B5FD"))
 	s.Base = lipgloss.NewStyle().
 		Padding(1, 4, 0, 1)
 	s.HeaderText = lipgloss.NewStyle().
@@ -51,7 +51,7 @@ func newStyles(hasDarkBg bool) *styles {
 		Foreground(s.Green).
 		Bold(true)
 	s.Highlight = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("212"))
+		Foreground(lipgloss.Color("#B8A2FF"))
 	s.ErrorHeaderText = s.HeaderText.
 		Foreground(s.Red)
 	s.Help = lipgloss.NewStyle().
@@ -127,6 +127,7 @@ func newModel(database, username, host, port string) *model {
 				Value(&m.values.Password),
 		),
 	).
+		WithTheme(pgxcliTheme{}).
 		WithWidth(45).
 		WithShowHelp(false).
 		WithShowErrors(false)
@@ -188,7 +189,7 @@ func (m *model) View() tea.View {
 		return view
 	default:
 		// Orca (left side)
-		orca := lipgloss.NewStyle().Margin(1, 4, 0, 0).Render(orcaView())
+		orca := lipgloss.NewStyle().Margin(1, 4, 0, 0).Render(orcaStr())
 
 		// Form card (right side)
 		v := strings.TrimSuffix(m.form.View(), "\n\n")
@@ -219,7 +220,13 @@ func (m *model) View() tea.View {
 		if len(errors) > 0 {
 			header = m.appErrorBoundaryView(m.errorView())
 		}
-		body := lipgloss.JoinHorizontal(lipgloss.Center, orca, rightPanel)
+		totalWidthReq := lipgloss.Width(orca) + lipgloss.Width(rightPanel) + s.Base.GetHorizontalFrameSize()
+		var body string
+		if m.termWidth > 0 && m.termWidth < totalWidthReq {
+			body = rightPanel
+		} else {
+			body = lipgloss.JoinHorizontal(lipgloss.Center, orca, rightPanel)
+		}
 
 		footer := m.appBoundaryView(m.form.Help().ShortHelpView(m.form.KeyBinds()))
 		if len(errors) > 0 {
@@ -344,4 +351,43 @@ func validatePort(v string) error {
 		return errors.New("port must be between 1 and 65535")
 	}
 	return nil
+}
+
+type pgxcliTheme struct{}
+
+func (t pgxcliTheme) Theme(hasDarkBg bool) *huh.Styles {
+	s := huh.ThemeBase(hasDarkBg)
+
+	primary := lipgloss.Color("#A78BFA")
+	secondary := lipgloss.Color("#C4B5FD")
+	border := lipgloss.Color("#8B5CF6")
+	errorFg := lipgloss.Color("#FF6B6B")
+
+	s.Focused.Base = s.Focused.Base.BorderForeground(border)
+	s.Focused.Title = s.Focused.Title.Foreground(primary).Bold(true)
+	s.Focused.NoteTitle = s.Focused.NoteTitle.Foreground(primary).Bold(true)
+	s.Focused.Directory = s.Focused.Directory.Foreground(primary)
+	s.Focused.Description = s.Focused.Description.Foreground(secondary)
+	s.Focused.ErrorIndicator = s.Focused.ErrorIndicator.Foreground(errorFg)
+	s.Focused.ErrorMessage = s.Focused.ErrorMessage.Foreground(errorFg)
+	s.Focused.SelectSelector = s.Focused.SelectSelector.Foreground(primary)
+	s.Focused.NextIndicator = s.Focused.NextIndicator.Foreground(primary)
+	s.Focused.PrevIndicator = s.Focused.PrevIndicator.Foreground(secondary)
+	s.Focused.Option = s.Focused.Option.Foreground(secondary)
+	s.Focused.MultiSelectSelector = s.Focused.MultiSelectSelector.Foreground(primary)
+	s.Focused.SelectedOption = s.Focused.SelectedOption.Foreground(primary)
+	s.Focused.SelectedPrefix = s.Focused.SelectedPrefix.Foreground(primary)
+	s.Focused.UnselectedPrefix = s.Focused.UnselectedPrefix.Foreground(secondary)
+	s.Focused.UnselectedOption = s.Focused.UnselectedOption.Foreground(secondary)
+	s.Focused.FocusedButton = s.Focused.FocusedButton.Foreground(lipgloss.Color("#2A273F")).Background(primary)
+	s.Focused.BlurredButton = s.Focused.BlurredButton.Foreground(secondary).Background(lipgloss.Color("#2A273F"))
+
+	s.Focused.TextInput.Cursor = s.Focused.TextInput.Cursor.Foreground(primary)
+	s.Focused.TextInput.Placeholder = s.Focused.TextInput.Placeholder.Foreground(lipgloss.Color("240"))
+	s.Focused.TextInput.Prompt = s.Focused.TextInput.Prompt.Foreground(primary)
+
+	s.Blurred = s.Focused
+	s.Blurred.Base = s.Blurred.Base.BorderStyle(lipgloss.HiddenBorder())
+
+	return s
 }
