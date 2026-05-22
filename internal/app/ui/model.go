@@ -206,6 +206,7 @@ func (m *Model) handleInput() (tea.Model, tea.Cmd) {
 	trimmed := strings.TrimSpace(input)
 
 	if trimmed == "" {
+		m.input.Reset()
 		return m, tea.Sequence(
 			m.printUserInput(m.styles.UserInput.Render(m.input.Prompt()), ""),
 			func() tea.Msg {
