@@ -49,6 +49,7 @@ type Model struct {
 	input         components.InputModel
 	statusModel   components.StatusModel
 	spinner       components.SpinnerModel
+	isSpinning    bool
 	width, height int
 	state         State
 	quitting      bool
@@ -144,6 +145,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case ReadyMsg:
 		m.state = StateInput
+		m.isSpinning = false
 		if msg.Prefix != "" {
 			m.input.SetPrompt(msg.Prefix)
 		}
@@ -153,9 +155,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, msg.Cmd
 
 	case spinner.TickMsg:
-		var smCmd tea.Cmd
-		m.spinner, smCmd = m.spinner.Update(msg)
-		return m, smCmd
+		if m.isSpinning {
+			var smCmd tea.Cmd
+			m.spinner, smCmd = m.spinner.Update(msg)
+			return m, smCmd
+		}
+		return m, nil
 
 	case editline.InputCompleteMsg:
 		if m.state == StateExecuting {
@@ -211,11 +216,13 @@ func (m *Model) handleInput() (tea.Model, tea.Cmd) {
 
 	m.prevUserInput = input
 	m.state = StateExecuting
+	m.isSpinning = true
 	m.input.AddHistoryEntry(input)
 	m.input.Reset()
 
 	return m, tea.Sequence(
 		m.printUserInput(m.styles.UserInput.Render(m.input.Prompt()), input),
+		m.spinner.Tick(),
 		m.execute(trimmed),
 	)
 }

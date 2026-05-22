@@ -31,6 +31,10 @@ func (m SpinnerModel) Init() tea.Cmd {
 	return m.spinner.Tick
 }
 
+func (m SpinnerModel) Tick() tea.Cmd {
+	return m.spinner.Tick
+}
+
 func (m SpinnerModel) Update(msg tea.Msg) (SpinnerModel, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
