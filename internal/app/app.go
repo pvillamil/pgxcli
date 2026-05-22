@@ -16,7 +16,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/balaji01-4d/pgxspecial"
-	"github.com/balajz/pgxcli/internal/app/commands"
 	"github.com/balajz/pgxcli/internal/app/renderer"
 	"github.com/balajz/pgxcli/internal/app/ui"
 	"github.com/balajz/pgxcli/internal/cliio"
@@ -36,8 +35,8 @@ type Application interface {
 	Close() error
 }
 
-var builtinsCommand = map[string]func(){
-	"\\clear": commands.ClearScreen,
+var builtinsCommand = map[string]func() tea.Cmd{
+	"\\clear": func() tea.Cmd { return tea.ClearScreen },
 }
 
 // pgxCLI is the main implementation of the Application interface.
@@ -74,8 +73,7 @@ func (p *pgxCLI) execute(ctx context.Context, query string) tea.Cmd {
 
 	if cmd, ok := builtinsCommand[query]; ok {
 		p.logger.Debug("executing builtin command", "command", query)
-		cmd()
-		return promptReady
+		return tea.Sequence(cmd(), promptReady)
 	}
 
 	return func() tea.Msg {
@@ -281,16 +279,16 @@ func (p *pgxCLI) printViaPager(str string) tea.Cmd {
 	if p.Printer.ShouldUsePager(str) {
 		cmd, ok := cliio.PagerCmd(str)
 		if !ok {
-			return ui.PrintCmd(str)
+			return ui.PrintCmd(str, ui.DefaultStyles().AppOutput)
 		}
 		return ui.ShowPagerCmd(cmd)
 	}
 
-	return ui.PrintCmd(str)
+	return ui.PrintCmd(str, ui.DefaultStyles().AppOutput)
 }
 
 func (p *pgxCLI) printError(err error) tea.Cmd {
-	return ui.PrintErrCmd(err)
+	return ui.PrintErrCmd(err, ui.DefaultStyles().ErrorOutput)
 }
 
 func (p *pgxCLI) Close() error {

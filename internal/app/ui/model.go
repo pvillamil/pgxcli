@@ -7,53 +7,26 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/Balaji01-4D/bubbline/computil"
 	"github.com/Balaji01-4D/bubbline/editline"
-	"github.com/Balaji01-4D/bubbline/history"
 	"github.com/alecthomas/chroma/v2/quick"
-	"github.com/balajz/pgxcli/internal/config"
+	"github.com/balajz/pgxcli/internal/app/ui/components"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/muesli/termenv"
 )
 
 var chromaFormatter = detectTerminalColorProfile()
 
-var (
-	userInputStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#A78BFA"))
+type State int
 
-	appOutputStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#C4B5FD"))
-
-	errorOutputStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#FF6B6B"))
-
-	userQuerySeparatorStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#B8A2FF"))
-
-	inputSeparatorStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#8B5CF6"))
-
-	spinnerStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#C4B5FD")).
-			PaddingLeft(2).
-			Bold(true)
-
-	spinnerCaptionStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#A78BFA")).
-				Italic(true).
-				Faint(true)
-
-	statusBarStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#C4B5FD")).
-			Background(lipgloss.Color("#2A273F")).
-			Padding(0, 1)
+const (
+	StateInput State = iota
+	StateExecuting
 )
 
 // ReadyMsg signals the ui that execution is done and it should prompt.
@@ -73,55 +46,90 @@ type cancel func(ctx context.Context) error
 type execute func(query string) tea.Cmd
 
 type Model struct {
-	input         *editline.Model
-	spinner       spinner.Model
+	input         components.InputModel
+	statusModel   components.StatusModel
+	spinner       components.SpinnerModel
 	width, height int
-	executing     bool
+	state         State
 	quitting      bool
 	prevUserInput string
-	historyFile   string
-	style         string
 	version       string
+	highlighter   func(string) string
+
+	keys   KeyMap
+	styles Styles
 
 	// execute executes a query passed and return as ExecCmdMsg + ReadyMsg.
 	execute execute
 	cancel  cancel
+
+	dump *os.File
 }
 
 func New(initialPrefix string, pgKeywords []string, historyFile string, style string, version string, executeFunc execute, cancelFunc cancel) (*Model, error) {
-	el := editline.New(1, 1)
-	el.Prompt = initialPrefix
-	if historyFile == "" || historyFile == config.Default {
-		historyFile = getHistoryFilePath()
+	inputModel, err := components.NewInputModel(initialPrefix, historyFile, pgKeywords, style)
+	if err != nil {
+		return nil, fmt.Errorf("creating input model: %w", err)
 	}
 
-	if err := applyEditlineConfig(el, historyFile, pgKeywords, style); err != nil {
-		return nil, fmt.Errorf("applying input config: %w", err)
-	}
+	styles := DefaultStyles()
 
-	sp := spinner.New()
-	sp.Spinner = spinner.Dot
-	sp.Style = spinnerStyle
+	statusModel := components.NewStatusModel(version)
+	statusModel.SeparatorStyle = styles.InputSeparator
+	statusModel.StatusBarStyle = styles.StatusBar
+
+	spinnerModel := components.NewSpinnerModel(styles.Spinner, styles.SpinnerCaption)
+
+	var dump *os.File
+	if _, ok := os.LookupEnv("PGXCLI_DEBUG"); ok {
+		dump, err = os.OpenFile("pgxcli_messages.log", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
+		if err != nil {
+			return nil, fmt.Errorf("opening debug log: %w", err)
+		}
+	}
 
 	return &Model{
-		input:       el,
-		spinner:     sp,
-		historyFile: historyFile,
-		style:       style,
+		input:       *inputModel,
+		statusModel: statusModel,
+		spinner:     spinnerModel,
 		version:     version,
+		state:       StateInput,
+		keys:        DefaultKeyMap(),
+		styles:      styles,
 		execute:     executeFunc,
 		cancel:      cancelFunc,
+		dump:        dump,
+		highlighter: postgresHighlighter(style),
 	}, nil
 }
 
 func (m *Model) Init() tea.Cmd {
 	return tea.Batch(
-		m.input.Focus(),
-		m.spinner.Tick,
+		m.input.Init(),
+		m.statusModel.Init(),
+		m.spinner.Init(),
 	)
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m.dump != nil {
+		spew.Fdump(m.dump, msg)
+	}
+
+	var cmds []tea.Cmd
+
+	// Send WindowSize to children
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
+		var smCmd tea.Cmd
+		m.statusModel, smCmd = m.statusModel.Update(msg)
+		cmds = append(cmds, smCmd)
+		m.updateInputSize()
+		return m, tea.Batch(cmds...)
+	}
+
 	switch msg := msg.(type) {
 
 	case QuitRequestMsg:
@@ -134,45 +142,39 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case ReadyMsg:
-		m.executing = false
+		m.state = StateInput
 		if msg.Prefix != "" {
-			m.input.Prompt = msg.Prefix
+			m.input.SetPrompt(msg.Prefix)
 		}
-		return m, m.input.Focus()
+		return m, nil
 
 	case ExecCmdMsg:
 		return m, msg.Cmd
 
 	case spinner.TickMsg:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
+		var smCmd tea.Cmd
+		m.spinner, smCmd = m.spinner.Update(msg)
+		return m, smCmd
 
 	case editline.InputCompleteMsg:
-		if m.executing {
+		if m.state == StateExecuting {
 			return m, nil
 		}
 		return m.handleInput()
 
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		m.input.SetSize(msg.Width, msg.Height-4)
-		return m, nil
-
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+d":
+		if key.Matches(msg, m.keys.Quit) {
 			return m, func() tea.Msg {
 				return QuitRequestMsg{}
 			}
-		case "ctrl+c":
-			if m.executing {
-				m.executing = false
+		}
+		if key.Matches(msg, m.keys.Interrupt) {
+			if m.state == StateExecuting {
+				m.state = StateInput
 				cancelFn := m.cancel
 				return m, func() tea.Msg {
 					if err := cancelFn(context.Background()); err != nil {
-						return ExecCmdMsg{Cmd: PrintErrCmd(err)}
+						return ExecCmdMsg{Cmd: PrintErrCmd(err, m.styles.ErrorOutput)}
 					}
 					return nil
 				}
@@ -183,9 +185,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	var nextCmd tea.Cmd
-	m.input, nextCmd = m.input.Update(msg)
-	return m, nextCmd
+	// Route to input only if in input state, avoiding capturing keystrokes while executing.
+	if m.state == StateInput {
+		var nextCmd tea.Cmd
+		m.input, nextCmd = m.input.Update(msg)
+		cmds = append(cmds, nextCmd)
+	}
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) handleInput() (tea.Model, tea.Cmd) {
@@ -194,35 +201,51 @@ func (m *Model) handleInput() (tea.Model, tea.Cmd) {
 
 	if trimmed == "" {
 		return m, tea.Sequence(
-			m.printUserInput(userInputStyle.Render(m.input.Prompt), ""),
+			m.printUserInput(m.styles.UserInput.Render(m.input.Prompt()), ""),
 			func() tea.Msg {
-				return ReadyMsg{Prefix: m.input.Prompt}
+				return ReadyMsg{Prefix: m.input.Prompt()}
 			},
 		)
 	}
 
 	m.prevUserInput = input
-	m.executing = true
+	m.state = StateExecuting
 	m.input.AddHistoryEntry(input)
 	m.input.Reset()
 
 	return m, tea.Sequence(
-		m.printUserInput(userInputStyle.Render(m.input.Prompt), input),
+		m.printUserInput(m.styles.UserInput.Render(m.input.Prompt()), input),
 		m.execute(trimmed),
 	)
 }
 
 func (m *Model) printUserInput(prefix, input string) tea.Cmd {
-	var highlightedInput string
-	if input != "" {
-		highlightedInput = postgresHighlighter(m.style)(input)
+	return func() tea.Msg {
+		var highlightedInput string
+		if input != "" {
+			highlightedInput = m.highlighter(input)
+		}
+
+		// used to seperate previous user input from the current one with half straight line.
+		line := strings.Repeat("─", m.width/2)
+
+		userContent := lipgloss.JoinHorizontal(lipgloss.Left, prefix, highlightedInput)
+		userContent = lipgloss.JoinVertical(lipgloss.Top, m.styles.UserInputSepartor.Render(line), userContent)
+
+		return ExecCmdMsg{Cmd: tea.Printf("%s", userContent)}
 	}
+}
 
-	line := strings.Repeat("─", m.width/2)
-
-	userContent := lipgloss.JoinHorizontal(lipgloss.Left, userInputStyle.Render(prefix), highlightedInput)
-	userContent = lipgloss.JoinVertical(lipgloss.Top, userQuerySeparatorStyle.Render(line), userContent)
-	return tea.Printf("%s", userContent)
+func (m *Model) updateInputSize() {
+	if m.width == 0 || m.height == 0 {
+		return
+	}
+	// Calculate available height for input
+	h := m.height - m.statusModel.StaticHeight()
+	if h < 1 {
+		h = 1
+	}
+	m.input.SetSize(m.width, h)
 }
 
 func (m *Model) View() tea.View {
@@ -234,38 +257,32 @@ func (m *Model) View() tea.View {
 		return tea.NewView("")
 	}
 
-	if m.executing {
-		spinnerLine := lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			m.spinner.View(),
-			spinnerCaptionStyle.Render("Postgresing..."),
-		)
+	var baseView string
 
-		return tea.NewView(spinnerLine)
+	if m.state == StateExecuting {
+		baseView = m.spinner.View()
+	} else {
+		separator := m.statusModel.SeparatorStyle.Render(strings.Repeat("─", m.width))
+
+		baseView = lipgloss.JoinVertical(
+			lipgloss.Top,
+			separator,
+			m.input.View(),
+			m.statusModel.View(),
+		)
 	}
 
-	statusStyle := statusBarStyle.Width(m.width)
-	separator := inputSeparatorStyle.Render(strings.Repeat("─", m.width)) // Full-width top + bottom borders for input
-
-	inputView := lipgloss.JoinVertical(
-		lipgloss.Top,
-		separator,
-		m.input.View(),
-		separator,
-		statusStyle.Render("pgxcli "+m.version),
-	)
-
-	return tea.NewView(inputView)
+	return tea.NewView(baseView)
 }
 
 func (m *Model) saveHistory() error {
-	if m.historyFile == "" {
-		return nil
-	}
-	return history.SaveHistory(m.input.GetHistory(), m.historyFile)
+	return m.input.SaveHistory()
 }
 
 func (m *Model) Close() error {
+	if m.dump != nil {
+		_ = m.dump.Close()
+	}
 	if err := m.saveHistory(); err != nil {
 		return fmt.Errorf("saving history: %w", err)
 	}
@@ -273,19 +290,19 @@ func (m *Model) Close() error {
 }
 
 // PrintCmd returns a command that prints formatted text.
-func PrintCmd(text string) tea.Cmd {
+func PrintCmd(text string, style lipgloss.Style) tea.Cmd {
 	formattedInteraction := lipgloss.Sprintf(
 		"%s\n",
-		appOutputStyle.Render(text),
+		style.Render(text),
 	)
 	return tea.Printf("%s", formattedInteraction)
 }
 
 // PrintErrCmd returns a command that prints a formatted error.
-func PrintErrCmd(err error) tea.Cmd {
+func PrintErrCmd(err error, style lipgloss.Style) tea.Cmd {
 	formattedError := lipgloss.Sprintf(
 		"%s\n",
-		errorOutputStyle.Render("✗ "+err.Error()),
+		style.Render("✗ "+err.Error()),
 	)
 	return tea.Printf("%s", formattedError)
 }
@@ -310,26 +327,6 @@ func postgresHighlighter(style string) func(string) string {
 	}
 }
 
-func postgresAutocomplete(pgKeywords []string) func(v [][]rune, line, col int) (string, editline.Completions) {
-	return func(v [][]rune, line, col int) (string, editline.Completions) {
-		word, wstart, wend := computil.FindWord(v, line, col)
-		if word == "" {
-			return "", nil
-		}
-		upperWord := strings.ToUpper(word)
-		var matches []string
-		for _, kw := range pgKeywords {
-			if strings.HasPrefix(kw, upperWord) {
-				matches = append(matches, kw)
-			}
-		}
-		if len(matches) == 0 {
-			return "", nil
-		}
-		return "", editline.SimpleWordsCompletion(matches, "Keywords", col, wstart, wend)
-	}
-}
-
 func detectTerminalColorProfile() string {
 	switch termenv.ColorProfile() {
 	case termenv.TrueColor:
@@ -341,52 +338,4 @@ func detectTerminalColorProfile() string {
 	default:
 		return "noop"
 	}
-}
-
-func applyEditlineConfig(el *editline.Model, historyFile string, pgKeywords []string, style string) error {
-	el.SetHelpDisabled(true)
-	el.SetHighlighter(postgresHighlighter(style))
-	el.SetExternalEditorEnabled(true, "sql")
-	el.KeyMap.ExternalEdit = key.NewBinding(
-		key.WithKeys("ctrl+e"),
-		key.WithHelp("ctrl+e", "edit query in external editor"),
-	)
-	el.AutoComplete = postgresAutocomplete(pgKeywords)
-
-	el.CheckInputComplete = func(entireInput [][]rune, line, col int) bool {
-		var sb strings.Builder
-		for i, rline := range entireInput {
-			if i > 0 {
-				sb.WriteByte('\n')
-			}
-			sb.WriteString(string(rline))
-		}
-		input := strings.TrimSpace(sb.String())
-
-		if input == "" {
-			return true
-		}
-
-		if strings.HasPrefix(input, "\\") {
-			return true
-		}
-
-		return strings.HasSuffix(input, ";")
-	}
-
-	entries, err := history.LoadHistory(historyFile)
-	if err != nil {
-		return fmt.Errorf("loading history: %w", err)
-	}
-
-	el.SetHistory(entries)
-	return nil
-}
-
-func getHistoryFilePath() string {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return ""
-	}
-	return filepath.Join(homeDir, ".pgxcli_history.jsonl")
 }
