@@ -36,3 +36,12 @@ For complex queries, you can launch your favorite text editor directly from the 
 Press `Ctrl+E` to open the current query in the editor defined by your `$EDITOR` environment variable (e.g., `vim`, `nano`, `code`). When you save and exit the editor, the query is automatically brought back to the prompt, ready for execution.
 
 ---
+
+## Interactive UI Elements
+
+pgxcli provides a modern and responsive user interface, including:
+- **Loading Spinner:** A visual spinner indicator that displays during query execution, letting you know your query is running.
+- **Orca Banner:** A colorful ASCII orca banner with gradient styling on startup.
+- **Issue Reporting:** A clickable link in the status bar to easily report issues on GitHub.
+
+---

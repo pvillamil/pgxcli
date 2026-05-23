@@ -10,7 +10,7 @@ export default function Home() {
 
           {/* Screenshot — large, full width */}
           <div className={styles.heroRight}>
-            <img src="img/app-screenshot.png" alt="pgxcli in action" className={styles.screenshot}/>
+            <img src="img/home.png" alt="pgxcli in action" className={styles.screenshot}/>
           </div>
 
           {/* Text below screenshot — brand text on left, content centered */}
