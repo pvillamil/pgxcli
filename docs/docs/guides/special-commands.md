@@ -71,7 +71,7 @@ These are pgxcli-specific:
 
 | Command | Description |
 |---------|-------------|
-| `\clear` | Clear the terminal screen |
+| `\clear`, `/clear` | ~~Clear the terminal screen~~ (**Currently disabled**, will be fixed in an upcoming update) |
 
 ---
 
