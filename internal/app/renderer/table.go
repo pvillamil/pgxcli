@@ -16,6 +16,8 @@ type Data interface {
 	Caption() string
 }
 
+// Table renders the provided data as a table.
+// Currently been used by the special results / meta commands only.
 func Table(data Data, w io.Writer, c *config.Config) error {
 	t := tablewriter.NewTable(w, tablewriter.WithRenderer(renderer.NewColorized(GetTableStyle(c))))
 	rows, err := data.Rows()
