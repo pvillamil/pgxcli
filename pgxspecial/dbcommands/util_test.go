@@ -1,3 +1,5 @@
+//go:build integration
+
 package dbcommands_test
 
 // this file contains utility functions for setting up and tearing down database objects
@@ -19,7 +21,6 @@ func connectTestDB(t *testing.T) database.Queryer {
 	ctx := context.Background()
 	db_url := os.Getenv("PGXSPECIAL_TEST_DSN")
 	db, err := pgxpool.New(ctx, db_url)
-
 	if err != nil {
 		t.Fatalf("Failed to connect to database: %v", err)
 	}

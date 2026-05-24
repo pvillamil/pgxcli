@@ -1,3 +1,5 @@
+//go:build integration
+
 package dbcommands_test
 
 import (
@@ -206,8 +208,8 @@ func TestListSchemasWithPatternVerbose(t *testing.T) {
 		t.Fatalf("Failed to read rows: %v", err)
 	}
 	assert.GreaterOrEqual(t, len(allRows), 2, "Expected at least two schemas matching the pattern")
-
 }
+
 func TestListSchemasWithNoMatchingPatternVerbose(t *testing.T) {
 	db := connectTestDB(t)
 	defer db.(*pgxpool.Pool).Close()

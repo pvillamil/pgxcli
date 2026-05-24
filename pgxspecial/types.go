@@ -90,7 +90,6 @@ type TableFooterMeta struct {
 	OwnedBy            *string  // "Owned by:" (sequences)
 }
 
-
 // DescribeTableResult holds the result of a describe table command.
 // this is not used in any return types directly, but is embedded in
 // DescribeTableListResult.
@@ -101,7 +100,6 @@ type DescribeTableResult struct {
 	Data          [][]string
 	TableMetaData TableFooterMeta
 }
-
 
 // DescribeTableListResult holds multiple DescribeTableResult entries.
 // This is used when multiple tables are described in a single command.
@@ -120,7 +118,6 @@ type ExtensionVerboseResult struct {
 	Name        string
 	Description []string
 }
-
 
 // ExtensionVerboseListResult holds multiple ExtensionVerboseResult entries.
 // This is used when multiple extensions are described in a single command.

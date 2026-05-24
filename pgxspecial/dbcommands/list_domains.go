@@ -11,11 +11,11 @@ import (
 
 func init() {
 	pgxspecial.RegisterCommand(pgxspecial.SpecialCommandRegistry{
-		Cmd: "\\dD",
-		Syntax: "\\dD[+] [pattern]",
-		Description: "List or describe domains.",
+		Cmd:           "\\dD",
+		Syntax:        "\\dD[+] [pattern]",
+		Description:   "List or describe domains.",
 		CaseSensitive: true,
-		Handler: ListDomains,
+		Handler:       ListDomains,
 	})
 }
 

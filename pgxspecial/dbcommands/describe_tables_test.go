@@ -1,3 +1,5 @@
+//go:build integration
+
 package dbcommands_test
 
 import (
@@ -301,7 +303,6 @@ func CreateTable(
 		`SELECT oid FROM pg_class WHERE relname = $1 AND relkind = 'r'`,
 		tableName,
 	).Scan(&oid)
-
 	if err != nil {
 		t.Fatalf("failed to fetch OID for table %s: %v", tableName, err)
 	}

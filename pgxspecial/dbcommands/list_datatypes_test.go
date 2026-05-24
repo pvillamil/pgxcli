@@ -1,3 +1,5 @@
+//go:build integration
+
 package dbcommands_test
 
 import (
@@ -184,7 +186,6 @@ func TestListDatatypesVerbose(t *testing.T) {
 	for _, typeName := range typeNames {
 		assert.True(t, containsByField(allRows, "name", typeName))
 	}
-
 }
 
 func TestListDatatypesVerboseWithPattern(t *testing.T) {

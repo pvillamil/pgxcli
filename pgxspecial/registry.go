@@ -34,7 +34,6 @@ var commandRegistry = map[string]SpecialCommand{}
 // RegisterCommand does not perform validation for duplicate command names or
 // aliases; later registrations will overwrite existing entries with the same key.
 func RegisterCommand(cmdRegistry SpecialCommandRegistry) {
-
 	normalize := func(s string) string {
 		if cmdRegistry.CaseSensitive {
 			return s

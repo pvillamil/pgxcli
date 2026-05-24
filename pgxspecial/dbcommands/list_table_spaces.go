@@ -61,5 +61,4 @@ func ListTablespaces(ctx context.Context, db database.Queryer, pattern string, v
 	sb.WriteString(" ORDER BY 1;")
 	rowResult, err := db.Query(ctx, sb.String(), args...)
 	return pgxspecial.RowResult{Rows: rowResult}, err
-
 }

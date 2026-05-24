@@ -75,5 +75,4 @@ func ShowFunctionDefinition(ctx context.Context, db database.Queryer, pattern st
 		return nil, err
 	}
 	return pgxspecial.RowResult{Rows: rows}, nil
-
 }

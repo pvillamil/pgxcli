@@ -1,3 +1,5 @@
+//go:build integration
+
 package dbcommands_test
 
 import (

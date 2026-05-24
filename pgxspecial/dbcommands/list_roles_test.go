@@ -1,3 +1,5 @@
+//go:build integration
+
 package dbcommands_test
 
 import (
@@ -49,7 +51,7 @@ func TestListRoles(t *testing.T) {
 		t.Fatalf("Failed to read rows: %v", err)
 	}
 
-	var essentialDefaultRoles = []string{
+	essentialDefaultRoles := []string{
 		"postgres",
 		"pg_monitor",
 		"pg_read_all_data",
@@ -101,7 +103,7 @@ func TestListRolesWithPattern(t *testing.T) {
 		t.Fatalf("Failed to read rows: %v", err)
 	}
 	assert.Len(t, allRows, 2)
-	var expectedRoles = []string{
+	expectedRoles := []string{
 		"pg_write_all_data",
 		"pg_write_server_files",
 	}
@@ -193,7 +195,7 @@ func TestListRolesWithPatternVerbose(t *testing.T) {
 		t.Fatalf("Failed to read rows: %v", err)
 	}
 	assert.Len(t, allRows, 2)
-	var expectedRoles = []string{
+	expectedRoles := []string{
 		"pg_write_all_data",
 		"pg_write_server_files",
 	}

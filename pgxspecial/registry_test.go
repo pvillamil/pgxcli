@@ -1,3 +1,5 @@
+//go:build integration
+
 package pgxspecial_test
 
 import (
@@ -18,7 +20,6 @@ func connectTestDB(t *testing.T) database.Queryer {
 	ctx := context.Background()
 	db_url := os.Getenv("PGXSPECIAL_TEST_DSN")
 	db, err := pgx.Connect(ctx, db_url)
-
 	if err != nil {
 		t.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -77,6 +78,7 @@ func getColumnNames(fds []pgconn.FieldDescription) []string {
 	}
 	return columns
 }
+
 func isValidListDatabasesResult(t *testing.T, testingResult pgx.Rows) {
 	t.Helper()
 

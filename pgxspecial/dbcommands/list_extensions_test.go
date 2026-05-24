@@ -1,3 +1,5 @@
+//go:build integration
+
 package dbcommands_test
 
 import (
@@ -11,7 +13,6 @@ import (
 )
 
 func TestListExtensions(t *testing.T) {
-
 	db := connectTestDB(t)
 	defer db.(*pgxpool.Pool).Close()
 	pattern := ""
@@ -47,7 +48,6 @@ func TestListExtensions(t *testing.T) {
 	}
 	assert.Greater(t, len(allRows), 0, "Expected at least one extension")
 	assert.True(t, containsByField(allRows, "name", "plpgsql"), "Expected to find 'plpgsql' extension")
-
 }
 
 func TestListExtensionsWithPattern(t *testing.T) {
@@ -89,7 +89,6 @@ func TestListExtensionsWithPattern(t *testing.T) {
 }
 
 func TestListExtensionsVerbose(t *testing.T) {
-
 	db := connectTestDB(t)
 	defer db.(*pgxpool.Pool).Close()
 	pattern := ""

@@ -21,7 +21,6 @@ func init() {
 }
 
 func ListExtensions(ctx context.Context, db database.Queryer, pattern string, verbose bool) (pgxspecial.SpecialCommandResult, error) {
-
 	if verbose {
 		extensions, err := findExtension(ctx, db, pattern)
 		if err != nil {
