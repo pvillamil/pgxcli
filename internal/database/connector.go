@@ -97,5 +97,35 @@ func customTypes() []*pgtype.Type {
 			OID:   pgtype.JSONBOID,
 			Codec: &pgtype.TextCodec{},
 		},
+		{
+			Name:  "time",
+			OID:   pgtype.TimeOID,
+			Codec: &pgtype.TextCodec{},
+		},
+		{
+			Name:  "timetz",
+			OID:   pgtype.TimetzOID,
+			Codec: &pgtype.TextCodec{},
+		},
+		{
+			Name:  "timestamp",
+			OID:   pgtype.TimestampOID,
+			Codec: &pgtype.TextCodec{},
+		},
+		{
+			Name:  "timestamptz",
+			OID:   pgtype.TimestamptzOID,
+			Codec: &pgtype.TextCodec{},
+		},
+		{
+			Name:  "interval",
+			OID:   pgtype.IntervalOID,
+			Codec: &pgtype.TextCodec{},
+		},
+		{
+			Name:  "date",
+			OID:   pgtype.DateOID,
+			Codec: &pgtype.TextCodec{},
+		},
 	}
 }
