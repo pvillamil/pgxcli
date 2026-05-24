@@ -10,6 +10,9 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
+  <a href="https://pgxcli.vercel.app/">
+    <img src="https://res.cloudinary.com/dsdupsv2g/image/upload/q_auto/f_auto/v1779504361/home_lrj6gh.png" width="100%"/>
+  </a>
   <h1 align="center">pgxcli</h1>
   <p align="center">
     Interactive PostgreSQL command-line client written in Go.
@@ -109,6 +112,8 @@ If you have Go installed, you can install directly:
 go install github.com/balajz/pgxcli/cmd/pgxcli@latest
 ```
 
+For more details, see the [Installation Guide][install-ref].
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
@@ -127,6 +132,9 @@ pgxcli postgres://user:password@localhost:5432/dbname
 # interactive connection form
 pgxcli -i
 ```
+<img src="https://res.cloudinary.com/dsdupsv2g/image/upload/q_auto/f_auto/v1777298704/5_h2fxui.png" alt="pgxcli flags screenshot" width="100%"/>
+
+For full flag documentation, see the [docs][cli-ref].
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -137,6 +145,7 @@ On first run, a config file is created at:
 
 * `~/.config/pgxcli/config.toml` (or the OS-equivalent user config directory)
 
+For configuration documentation, see the [docs][config-ref]
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONTRIBUTING -->
@@ -175,4 +184,7 @@ Thank you for being part of the community! 🙌
 [cobra-url]: https://github.com/spf13/cobra
 [viper-url]: https://github.com/spf13/viper
 [pgcli-url]: https://github.com/dbcli/pgcli
+[cli-ref]: https://pgxcli.vercel.app/reference/cli-reference/
+[config-ref]: https://pgxcli.vercel.app/guides/configuration/
+[install-ref]: https://pgxcli.vercel.app/docs/guides/getting-started#installation
 [releases-url]: https://github.com/balajz/pgxcli/releases
