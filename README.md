@@ -10,9 +10,6 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://pgxcli.vercel.app/">
-    <img src="https://res.cloudinary.com/dsdupsv2g/image/upload/q_auto/f_auto/v1779504361/home_lrj6gh.png" width="100%"/>
-  </a>
   <h1 align="center">pgxcli</h1>
   <p align="center">
     Interactive PostgreSQL command-line client written in Go.
@@ -23,27 +20,17 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
+    <li><a href="#about-the-project">About The Project</a></li>
     <li><a href="#comparison-with-pgcli">Comparison with pgcli</a></li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
-        <li><a href="#development">Development</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#configuration">Configuration</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
@@ -122,8 +109,6 @@ If you have Go installed, you can install directly:
 go install github.com/balajz/pgxcli/cmd/pgxcli@latest
 ```
 
-For more details, see the [Installation Guide][install-ref].
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
@@ -143,10 +128,6 @@ pgxcli postgres://user:password@localhost:5432/dbname
 pgxcli -i
 ```
 
-<img src="https://res.cloudinary.com/dsdupsv2g/image/upload/q_auto/f_auto/v1777298704/5_h2fxui.png" alt="pgxcli flags screenshot" width="100%"/>
-
-For full flag documentation, see the [docs][cli-ref].
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- CONFIGURATION -->
@@ -155,8 +136,6 @@ For full flag documentation, see the [docs][cli-ref].
 On first run, a config file is created at:
 
 * `~/.config/pgxcli/config.toml` (or the OS-equivalent user config directory)
-
-For configuration documentation, see the [docs][config-ref]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -181,8 +160,6 @@ Thank you for being part of the community! 🙌
 * [pgx][pgx-url]
 * [Cobra][cobra-url]
 * [Viper][viper-url]
-* [go-pretty][go-pretty-url]
-* [go-prompter][go-prompter-url]
 * Inspired by [pgcli][pgcli-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -197,10 +174,5 @@ Thank you for being part of the community! 🙌
 [pgx-url]: https://github.com/jackc/pgx
 [cobra-url]: https://github.com/spf13/cobra
 [viper-url]: https://github.com/spf13/viper
-[go-pretty-url]: https://github.com/jedib0t/go-pretty
-[go-prompter-url]: https://github.com/jedib0t/go-prompter
 [pgcli-url]: https://github.com/dbcli/pgcli
-[cli-ref]: https://pgxcli.vercel.app/reference/cli-reference/
-[config-ref]: https://pgxcli.vercel.app/guides/configuration/
-[install-ref]: https://pgxcli.vercel.app/docs/guides/getting-started#installation
 [releases-url]: https://github.com/Balaji01-4D/pgxcli/releases
