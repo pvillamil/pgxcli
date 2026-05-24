@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-05-24
+
+- **Docker and AUR packages**: Added Dockerfile for containerized usage and Arch User Repository (AUR) package for Arch Linux users.
+
 ## [0.2.2] - 2026-05-24
 
 ### Fixed
