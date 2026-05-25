@@ -3,14 +3,13 @@ package database
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 
 	"github.com/balajz/pgxcli/internal/database/result"
 	"github.com/balajz/pgxcli/pgxspecial"
-
 	"github.com/jackc/pgx/v5"
 )
+
 
 var (
 	ErrConnectionClosed         = errors.New("connection closed unexpectedly")
@@ -119,22 +118,22 @@ func (e *executor) executeSpecial(ctx context.Context, cmd string) (pgxspecial.S
 	if err := e.ensureConn(ctx); err != nil {
 		return nil, false, err
 	}
-	specialResult, ok, err := pgxspecial.ExecuteSpecialCommand(ctx, e.conn, cmd)
+	res, ok, err := pgxspecial.ExecuteSpecialCommand(ctx, e.conn, cmd)
 	if err != nil {
 		e.Logger.Error("Special command execution failed", "error", err, "command", cmd)
 		return nil, ok, err
 	}
 
-	if !ok || specialResult == nil || specialResult.ResultKind() != pgxspecial.ResultKindRows {
-		return specialResult, ok, nil
+	if !ok || res == nil {
+		return res, ok, nil
 	}
 
-	rowResult, isRowResult := specialResult.(pgxspecial.RowResult)
-	if !isRowResult {
-		return nil, ok, fmt.Errorf("invalid row special result type: %T", specialResult)
+	rowRes, isRow := res.(pgxspecial.RowResult)
+	if !isRow {
+		return res, ok, nil
 	}
 
-	normalizedRows, err := result.NewSpecialRow(rowResult.Rows)
+	normalizedRows, err := result.NewSpecialRow(rowRes.Rows)
 	if err != nil {
 		e.Logger.Error("Failed to materialize special command rows", "error", err, "command", cmd)
 		return nil, ok, err
@@ -142,6 +141,7 @@ func (e *executor) executeSpecial(ctx context.Context, cmd string) (pgxspecial.S
 
 	return normalizedRows, ok, nil
 }
+
 
 func (e *executor) cancel(ctx context.Context) error {
 	if e.conn == nil || e.conn.IsClosed() {
