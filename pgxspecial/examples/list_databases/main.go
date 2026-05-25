@@ -30,11 +30,12 @@ func main() {
 	if !ok {
 		panic("command did not execute successfully")
 	}
-	if result.ResultKind() != pgxspecial.ResultKindRows {
+	rowRes, isRow := result.(pgxspecial.RowResult)
+	if !isRow {
 		panic("expected rows result")
 	}
 
-	rows := result.(pgxspecial.RowResult).Rows
+	rows := rowRes.Rows
 
 	columns := rows.FieldDescriptions()
 	for _, col := range columns {
@@ -67,13 +68,15 @@ func main() {
 	if !ok {
 		panic("command did not execute successfully")
 	}
-	if verboseResult.ResultKind() != pgxspecial.ResultKindRows {
+	vRowRes, isVRow := verboseResult.(pgxspecial.RowResult)
+	if !isVRow {
 		panic("expected rows result")
 	}
 
-	rows = verboseResult.(pgxspecial.RowResult).Rows
+	rows = vRowRes.Rows
 
 	columns = rows.FieldDescriptions()
+
 	for _, col := range columns {
 		print("| ", col.Name)
 	}
@@ -106,13 +109,15 @@ func main() {
 	if !ok {
 		panic("command did not execute successfully")
 	}
-	if patternResult.ResultKind() != pgxspecial.ResultKindRows {
+	pRowRes, isPRow := patternResult.(pgxspecial.RowResult)
+	if !isPRow {
 		panic("expected rows result")
 	}
 
-	rows = patternResult.(pgxspecial.RowResult).Rows
+	rows = pRowRes.Rows
 
 	columns = rows.FieldDescriptions()
+
 	for _, col := range columns {
 		print("| ", col.Name)
 	}
