@@ -2,7 +2,7 @@ MAIN_PATH = "cmd/pgxcli/main.go"
 BUILD_PATH = "bin"
 TIMEOUT = 60
 
-.PHONY: build clean run update runc lint test precommit fmt vet test-race test-short test-verbose test-bench coverage go-mod-tidy
+.PHONY: build clean run update runc lint test precommit fmt vet test-race test-short test-verbose test-bench test-integration coverage go-mod-tidy
 
 build:
 	@mkdir -p $(BUILD_PATH)
@@ -29,7 +29,8 @@ test-default: ARGS=-race
 test-short: ARGS=-short
 test-verbose: ARGS=-v -race
 test-bench: ARGS=-run=xxxxxMatchNothingxxxxx -bench=.
-test-default test-short test-verbose test-bench: test
+test-integration: ARGS=-tags=integration
+test-default test-short test-verbose test-bench test-integration: test
 test-race: test-default
 
 test:
@@ -67,7 +68,6 @@ clean:
 
 update:
 	@go get -u ./...
-
 
 
 DOCS_DIR := ./docs-site
