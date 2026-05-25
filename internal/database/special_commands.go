@@ -9,15 +9,6 @@ import (
 	_ "github.com/balajz/pgxcli/pgxspecial/dbcommands"
 )
 
-const (
-	// Exit is the result kind for quit command actions.
-	Exit pgxspecial.SpecialResultKind = 100 + iota
-	// ChangeDB is the result kind for database switch command actions.
-	ChangeDB
-	// Conninfo is the result kind for connection info command actions.
-	Conninfo
-)
-
 func init() {
 	registerSpecialCommands()
 }
@@ -59,25 +50,10 @@ func registerSpecialCommands() {
 // ExitAction indicates that the REPL should terminate.
 type ExitAction struct{}
 
-// ResultKind returns the special result kind for ExitAction.
-func (e ExitAction) ResultKind() pgxspecial.SpecialResultKind {
-	return Exit
-}
-
 // ChangeDbAction carries target database name for \c / \connect commands.
 type ChangeDbAction struct {
 	Name string
 }
 
-// ResultKind returns the special result kind for ChangeDbAction.
-func (c ChangeDbAction) ResultKind() pgxspecial.SpecialResultKind {
-	return ChangeDB
-}
-
 // ConnInfoAction indicates that connection info should be displayed.
 type ConnInfoAction struct{}
-
-// ResultKind returns the special result kind for ConnInfoAction.
-func (g ConnInfoAction) ResultKind() pgxspecial.SpecialResultKind {
-	return Conninfo
-}
