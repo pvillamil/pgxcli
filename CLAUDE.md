@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 make build          # Build to bin/app
 make test           # go test ./...
+make test-integration # go test -tags=integration ./...
 make lint           # golangci-lint run
 make precommit      # lint + test (run before committing)
 make clean          # remove bin/
@@ -21,24 +22,27 @@ go test -v ./internal/database # verbose
 
 ```
 cmd/pgxcli/main.go        → entry point; wires context, printer, cobra root command
-internal/cli/             → cobra command, flags, password prompting
+internal/cli/             → cobra command, flags, connection setup, password prompting
 internal/app/             → REPL loop, command routing, history, rendering
+internal/app/ui/          → Bubble Tea REPL model + connection forms (huh) + UI components
+internal/app/renderer/    → result formatting and table rendering helpers
 internal/database/        → pgx connection, query/exec dispatch, special commands
-internal/parser/          → SQL splitting and query-vs-exec classification
+internal/parser/          → SQL statement splitter
 internal/config/          → TOML config load/validate (embeds defaults)
 internal/completer/       → keyword autocompletion with schema metadata
 internal/cliio/           → Printer interface (stdout/stderr abstraction)
-internal/ui/              → Charm TUI forms (bubbletea/huh/lipgloss)
 internal/logger/          → slog-based file logger
 ```
 
 ### REPL data flow
 
-1. `app.pgxCLI.Start()` reads input via `go-prompter`-backed `Reader`
-2. Input is matched: builtin (e.g. clear screen) → special pgSQL command (`\d`, `\q`, `\c`) → SQL
-3. `parser.SplitSqlStatement` splits multi-statement input; everything is routed to `Query` on pgx
-4. `database.executor` runs the statement and returns a `result.QueryResult`
-5. `app/renderer` formats the result as a table (via `olekukonko/tablewriter`); `Printer` outputs via pager
+1. `cli.NewRootCmd` loads config/logger, initializes pager, and connects `database.Client`.
+2. `app.pgxCLI.Start()` builds the Bubble Tea model (`internal/app/ui`) with input, spinner, and status components.
+3. Input is handled by Bubbline editline with history and SQL highlighting; multi-statement SQL is split by `parser.SplitSQLStatements`.
+4. Builtins (e.g. `\clear`) are handled directly; special commands (`\d`, `\q`, `\c`, `\conninfo`) go through `pgxspecial`.
+5. SQL statements execute via `database.Client.ExecuteQuery`; `OnErrorAction` controls stop/resume for multi-statement input.
+6. `internal/app/renderer` formats output using table config; `cliio.Printer` emits output and uses a pager when needed.
+7. History is persisted via editline (default `~/.pgxcli_history.jsonl`) on close.
 
 ### Special commands
 
@@ -65,4 +69,4 @@ internal/logger/          → slog-based file logger
 
 **Lint:** golangci-lint is configured in `.golangci.yml` with `revive`, `misspell`, `gocyclo` (min 15), `goconst`, `unconvert`, `unparam`. Tests are excluded from linting. `internal/completer` is excluded from lint paths.
 
-**Interfaces:** `Application`, `Reader`, `Printer`, `Connector` — prefer programming to interfaces for testability.
+**Interfaces:** `Application`, `Printer`, `Connector` — prefer programming to interfaces for testability.

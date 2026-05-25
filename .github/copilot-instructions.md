@@ -11,6 +11,7 @@ make clean          # Remove compiled binaries
 ### Test
 ```bash
 go test ./...                      # Run all tests
+make test-integration              # Run integration tests (build tag: integration)
 go test ./internal/config          # Test specific package
 go test -v ./internal/database     # Verbose output
 ```
@@ -34,24 +35,26 @@ pgxcli is an interactive PostgreSQL CLI written in Go. The application follows a
 ### Core Packages
 
 - **`cmd/pgxcli/main.go`** – Entry point; initializes context, printer, and root CLI command.
-- **`internal/cli`** – Cobra command definitions (flags parsing, password prompting, root command setup).
-- **`internal/app`** – Application orchestration layer. `Application` interface manages the REPL loop, routes commands to database or special handlers, renders results, and manages history.
-- **`internal/database`** – PostgreSQL abstraction layer using `jackc/pgx`. Contains `Client` (connection mgmt), `Executor` (query/exec routing), and special commands handler.
+- **`internal/cli`** – Cobra command definitions (flags parsing, connection setup, password prompting).
+- **`internal/app`** – Application orchestration layer. `Application` manages the REPL loop, routes commands, renders results, and manages history.
+- **`internal/app/ui`** – Bubble Tea REPL model, connection forms (huh), and UI components.
+- **`internal/app/renderer`** – Result formatting and table rendering helpers.
+- **`internal/database`** – PostgreSQL abstraction layer using `jackc/pgx`. Contains `Client` (connection mgmt) and special commands handler.
 - **`internal/config`** – Configuration management (loads embedded defaults + user config from `~/.config/pgxcli/config.toml`).
 - **`internal/logger`** – Structured logging via `log/slog`. Initializes file-based logger with debug flag support.
 - **`internal/completer`** – SQL autocompletion engine; maintains database schema metadata.
-- **`internal/parser`** – SQL parsing; classifies statements as queries vs. execution commands via custom splitter.
-- **`internal/ui`** – Forms and prompts (uses Charm libraries: bubbletea, huh, lipgloss).
+- **`internal/parser`** – SQL statement splitter for multi-statement input.
 - **`internal/cliio`** – Output printing abstraction (stdout/stderr wrapper).
 
 ### Data Flow
 
-1. User enters input → **app.Start()** reads via prompt reader
-2. Input routed: builtin command → special pgSQL command (e.g., `\d`) → SQL query
-3. **database.Client** determines statement type (query vs. execution) via parser
-4. Executor runs query/exec; wraps pgx results
-5. **renderer** formats results as tables/text; printer outputs to stdout/stderr
-6. History stored in memory and persisted to history file on close
+1. **cobra root** loads config/logger, initializes pager, and connects `database.Client`.
+2. **app.Start()** builds the Bubble Tea model (`internal/app/ui`) with input, spinner, and status components.
+3. User input is handled by Bubbline editline with history + syntax highlighting; multi-statement SQL is split by `parser.SplitSQLStatements`.
+4. Builtins (e.g., `\clear`) are handled in app; pgSQL special commands (`\d`, `\q`, `\c`, `\conninfo`) go through `pgxspecial`.
+5. SQL executes via `database.Client.ExecuteQuery`; `OnErrorAction` controls stop/resume for multi-statement input.
+6. **renderer** formats results using table config; output flows through `cliio.Printer` with optional pager.
+7. History is saved via editline on close (default `~/.pgxcli_history.jsonl` when `history_file = "default"`).
 
 ## Key Conventions
 
@@ -78,18 +81,16 @@ pgxcli is an interactive PostgreSQL CLI written in Go. The application follows a
 
 - Special pgSQL commands (e.g., `\d`, `\l`) are registered via **pgxspecial** package initialization (see `internal/database/special_commands.go`).
 - The `OnErrorAction` config controls multi-statement behavior: `STOP` exits on error, `RESUME` continues.
-- **Parser** determines if a statement is a query (SELECT-like) or execution (INSERT/UPDATE/DELETE) to control transaction handling.
+- **Parser** splits multi-statement input; execution happens statement-by-statement.
 
 ### REPL Reader & History
 
-- REPL reader wraps `elk-language/go-prompt` (now uses `jedib0t/go-prompter` in latest version).
-- History is in-memory and persisted to a history file (default: `~/.local/share/pgxcli/history` or `~/.pgxcli/history` depending on OS).
-- History entries are passed to the reader for autocomplete suggestions.
+- REPL is built on Bubble Tea v2 with Bubbline editline input (history, autocomplete, syntax highlighting).
+- History is persisted by Bubbline to a JSONL file (default `~/.pgxcli_history.jsonl` when `history_file = "default"`).
 
 ### Rendering & Output
 
-- Results are rendered as tables by default (via `jedib0t/go-pretty`).
-- Renderer lives in `internal/app/renderer`; handles formatting queries, exec results, and errors.
+- Renderer lives in `internal/app/renderer`; table formatting uses `internal/app/renderer/formatter` with config-driven styles.
 - Output goes through a `Printer` interface (wraps stdout/stderr) for testability.
 
 ### Go Version & Dependencies
