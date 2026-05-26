@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -285,11 +286,19 @@ func connectWithFields(
 		"user", params.user,
 	)
 
-	if neverPrompt && password == "" {
+	if forcePrompt && password == "" {
+		pwd, err := promptPassword("Enter password")
+		if err != nil {
+			return err
+		}
+		password = pwd
+	}
+
+	if !forcePrompt && password == "" {
 		password = getPasswordFromEnv()
 	}
 
-	if forcePrompt && password == "" {
+	if shouldPromptBeforeConnect(password, neverPrompt, forcePrompt, runtime.GOOS) {
 		pwd, err := promptPassword("Enter password")
 		if err != nil {
 			return err
@@ -340,6 +349,10 @@ func connectWithFields(
 	}
 
 	return nil
+}
+
+func shouldPromptBeforeConnect(password string, neverPrompt bool, forcePrompt bool, goos string) bool {
+	return password == "" && !neverPrompt && !forcePrompt && goos == "windows"
 }
 
 func ensureConnected(cliCtx *CliContext) error {
