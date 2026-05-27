@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-05-27
+
+### Added
+- **Context Aware Autocompletion**: pgxcli now provides context-aware autocompletion for SQL queries, including table names, column names, and SQL keywords.
+
 ## [0.2.3] - 2026-05-24
 
 - **Docker and AUR packages**: Added Dockerfile for containerized usage and Arch User Repository (AUR) package for Arch Linux users.
