@@ -13,7 +13,6 @@ import (
 	"github.com/balajz/pgxcli/internal/app"
 	"github.com/balajz/pgxcli/internal/app/renderer"
 	"github.com/balajz/pgxcli/internal/app/ui"
-	"github.com/balajz/pgxcli/internal/completer"
 	"github.com/balajz/pgxcli/internal/config"
 	"github.com/balajz/pgxcli/internal/database"
 	"github.com/balajz/pgxcli/internal/logger"
@@ -354,8 +353,7 @@ func ensureConnected(cliCtx *CliContext) error {
 // initApplication Initializes the app,
 // which includes setting up the logger, config and autocompleter with PostgreSQL keywords.
 func initApplication(cliCtx *CliContext) error {
-	completer := completer.New(cliCtx.Logger.Logger)
-	pgxCLI, err := app.New(cliCtx.config, cliCtx.Printer, cliCtx.Logger.Logger, completer, cliCtx.Client, version)
+	pgxCLI, err := app.New(cliCtx.config, cliCtx.Printer, cliCtx.Logger.Logger, cliCtx.Client, version)
 	if err != nil {
 		cliCtx.Logger.Error("Failed to initialize app", "error", err)
 		return err
