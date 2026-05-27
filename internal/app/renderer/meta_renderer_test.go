@@ -69,7 +69,6 @@ type testRowsResult struct {
 }
 
 func (r testRowsResult) Columns() []string {
-
 	return r.columns
 }
 
