@@ -85,4 +85,3 @@ func (p *pgxCLI) handleSpecialCommand(ctx context.Context, res pgxspecial.Specia
 		return p.nextPrompt()
 	}
 }
-
