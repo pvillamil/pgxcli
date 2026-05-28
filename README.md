@@ -34,7 +34,7 @@
     <li><a href="#usage">Usage</a></li>
     <li><a href="#configuration">Configuration</a></li>
     <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
+    <li><a href="#thanks">Thanks</a></li>
   </ol>
 </details>
 
@@ -163,13 +163,15 @@ Thank you for being part of the community! 🙌
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
+<!-- THANKS -->
+## Thanks
 
 * [pgx][pgx-url]
 * [Cobra][cobra-url]
 * [Viper][viper-url]
 * Inspired by [pgcli][pgcli-url]
+* [sqls][sqls-url]
+* [CockroachDB][cockroachdb-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -184,6 +186,8 @@ Thank you for being part of the community! 🙌
 [cobra-url]: https://github.com/spf13/cobra
 [viper-url]: https://github.com/spf13/viper
 [pgcli-url]: https://github.com/dbcli/pgcli
+[sqls-url]: https://github.com/sqls-server/sqls
+[cockroachdb-url]: https://github.com/cockroachdb/cockroach
 [cli-ref]: https://pgxcli.vercel.app/reference/cli-reference/
 [config-ref]: https://pgxcli.vercel.app/guides/configuration/
 [install-ref]: https://pgxcli.vercel.app/docs/guides/getting-started#installation

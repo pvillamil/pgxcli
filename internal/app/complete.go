@@ -1,0 +1,156 @@
+package app
+
+import (
+	"sort"
+	"strings"
+
+	"github.com/Balaji01-4D/bubbline"
+	"github.com/Balaji01-4D/bubbline/computil"
+	"github.com/balajz/pgxls/pkg/engine"
+	"github.com/balajz/pgxls/pkg/types"
+)
+
+func (p *pgxCLI) getCompletions() bubbline.AutoCompleteFn {
+	go func() {
+		err := p.client.Cache(p.compWorker)
+		if err != nil {
+			p.logger.Error("error caching database schema for completions", "error", err)
+			p.logger.Debug("continuing with keyword completions")
+		}
+		p.logger.Debug("completion cache is ready")
+	}()
+
+	compEngine := engine.NewCompleter(p.compWorker.Cache())
+
+	return func(v [][]rune, line, col int) (msg string, comps bubbline.Completions) {
+		compEngine.DBCache = p.compWorker.Cache()
+		sql, _ := computil.Flatten(v, line, col)
+
+		items, err := compEngine.Complete(sql, line, col, true)
+		if err != nil || len(items) == 0 {
+			return "", nil
+		}
+
+		word, wstart, wend := computil.FindWord(v, line, col)
+
+		if lastDot := strings.LastIndex(word, "."); lastDot != -1 {
+			wstart += lastDot + 1
+		}
+
+		compByCategory := make(map[string][]compCandidate)
+		for _, row := range items {
+
+			category := "others"
+
+			switch row.Kind {
+			case types.KeywordCompletion:
+				category = "keywords"
+			case types.FunctionCompletion:
+				category = "functions"
+			case types.ClassCompletion:
+				category = "tables"
+			case types.FieldCompletion:
+				category = "columns"
+			case types.ModuleCompletion:
+				category = "schemas"
+			case types.SnippetCompletion:
+				category = "snippets"
+			}
+
+			docs := ""
+			if row.Documentation != nil {
+				docs = row.Documentation.Value
+			}
+
+			compByCategory[category] = append(compByCategory[category], compCandidate{
+				completion: row.Label,
+				desc:       row.Detail,
+				moveRight:  wend - col,
+				deleteLeft: wend - wstart,
+				docs:       docs,
+			})
+
+		}
+
+		if len(compByCategory) == 0 {
+			return msg, comps
+		}
+
+		limitKeyword(compByCategory, 8)
+
+		categories := make([]string, 0, len(compByCategory))
+		for k := range compByCategory {
+			categories = append(categories, k)
+		}
+		sort.Strings(categories)
+		comps = &completions{
+			categories:  categories,
+			compEntries: compByCategory,
+		}
+		return msg, comps
+	}
+}
+
+// https://github.com/cockroachdb/cockroach/blob/refs/heads/master/pkg/cli/clisqlshell/complete.go
+
+// completions is the interface between the shell and the bubbline
+// completion infra.
+type completions struct {
+	categories  []string
+	compEntries map[string][]compCandidate
+}
+
+var _ bubbline.Completions = (*completions)(nil)
+
+// NumCategories is part of the bubbline.Completions interface.
+func (c *completions) NumCategories() int { return len(c.categories) }
+
+// CategoryTitle is part of the bubbline.Completions interface.
+func (c *completions) CategoryTitle(cIdx int) string { return c.categories[cIdx] }
+
+// NumEntries is part of the bubbline.Completions interface.
+func (c *completions) NumEntries(cIdx int) int { return len(c.compEntries[c.categories[cIdx]]) }
+
+// Entry is part of the bubbline.Completions interface.
+func (c *completions) Entry(cIdx, eIdx int) bubbline.Entry {
+	return &c.compEntries[c.categories[cIdx]][eIdx]
+}
+
+// Candidate is part of the bubbline.Completions interface.
+func (c *completions) Candidate(e bubbline.Entry) bubbline.Candidate { return e.(*compCandidate) }
+
+// compCandidate represents one completion candidate.
+type compCandidate struct {
+	completion string
+	desc       string
+	moveRight  int
+	deleteLeft int
+	docs       string
+}
+
+var _ bubbline.Entry = (*compCandidate)(nil)
+
+// Title is part of the bubbline.Entry interface.
+func (c *compCandidate) Title() string { return c.completion }
+
+// Description is part of the bubbline.Entry interface.
+func (c *compCandidate) Description() string { return c.desc }
+
+// Replacement is part of the bubbline.Candidate interface.
+func (c *compCandidate) Replacement() string { return c.completion }
+
+// MoveRight is part of the bubbline.Candidate interface.
+func (c *compCandidate) MoveRight() int { return c.moveRight }
+
+// DeleteLeft is part of the bubbline.Candidate interface.
+func (c *compCandidate) DeleteLeft() int { return c.deleteLeft }
+
+func (c *compCandidate) SidePanel() string { return c.docs }
+
+func limitKeyword(comp map[string][]compCandidate, limit int) {
+	if comps, ok := comp["keywords"]; ok {
+		if len(comps) > limit {
+			comp["keywords"] = comps[:limit]
+		}
+	}
+}

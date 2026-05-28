@@ -9,6 +9,7 @@ require (
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/Balaji01-4D/bubbline v0.1.0
 	github.com/alecthomas/chroma/v2 v2.24.1
+	github.com/balajz/pgxls v0.1.2
 	github.com/charmbracelet/x/term v0.2.2
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fatih/color v1.19.0
@@ -115,5 +116,6 @@ require (
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.45.0 // indirect
 	golang.org/x/text v0.37.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
