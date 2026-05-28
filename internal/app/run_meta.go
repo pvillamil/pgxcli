@@ -17,7 +17,7 @@ import (
 )
 
 func (p *pgxCLI) handleSpecialCommand(ctx context.Context, res pgxspecial.SpecialCommandResult, client *database.Client, execTime time.Duration) tea.Cmd {
-	timingInfo := fmt.Sprintf("\nTime %.3fs", execTime.Seconds())
+	timingInfo := fmt.Sprintf("Time %.3fs", execTime.Seconds())
 
 	switch msg := res.(type) {
 
@@ -33,7 +33,7 @@ func (p *pgxCLI) handleSpecialCommand(ctx context.Context, res pgxspecial.Specia
 			}
 		}
 		out := fmt.Sprintf(
-			"You are now connected to database %q as user %q",
+			"You are now connected to database %q as user %q\n",
 			client.GetDatabase(),
 			client.GetUser(),
 		)
@@ -62,7 +62,7 @@ func (p *pgxCLI) handleSpecialCommand(ctx context.Context, res pgxspecial.Specia
 		}
 
 		out := fmt.Sprintf(
-			"You are connected to database %q as user %q on %s at port %s",
+			"You are connected to database %q as user %q on %s at port %s\n",
 			client.GetDatabase(), client.GetUser(), host, port,
 		)
 		return p.withPrompt(p.printViaPager(out + timingInfo))
