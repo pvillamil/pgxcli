@@ -193,12 +193,12 @@ func (p *pgxCLI) printError(err error) tea.Cmd {
 
 func (p *pgxCLI) Close() error {
 	p.logger.Info("closing application and saving history")
-	if p.model != nil {
-		return p.model.Close()
-	}
-
 	if p.compWorker != nil {
 		p.compWorker.Stop()
+	}
+
+	if p.model != nil {
+		return p.model.Close()
 	}
 	return nil
 }
