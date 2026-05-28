@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -283,16 +284,16 @@ func connectWithFields(
 		"user", params.user,
 	)
 
-	if neverPrompt && password == "" {
-		password = getPasswordFromEnv()
-	}
-
 	if forcePrompt && password == "" {
 		pwd, err := promptPassword("Enter password")
 		if err != nil {
 			return err
 		}
 		password = pwd
+	}
+
+	if !forcePrompt && password == "" {
+		password = getPasswordFromEnv()
 	}
 
 	connector, err := database.NewPGConnectorFromFields(
@@ -319,14 +320,18 @@ func connectWithFields(
 	}
 
 	cliCtx.Logger.Debug("Connection failed, prompting for password")
-	if wErr := renderer.Error(
-		fmt.Errorf("Wrong password, try again."), //nolint // user-facing message
-		os.Stderr,
-	); wErr != nil {
-		return wErr
+	prompt := "Enter password"
+	if password != "" {
+		if wErr := renderer.Error(
+			fmt.Errorf("Wrong password, try again."), //nolint // user-facing message
+			os.Stderr,
+		); wErr != nil {
+			return wErr
+		}
+		prompt = "Enter password again"
 	}
 
-	pwd, err := promptPassword("Enter password again")
+	pwd, err := promptPassword(prompt)
 	if err != nil {
 		return err
 	}
@@ -399,27 +404,17 @@ func parsePositionalDBAndUser(args []string) (string, string) {
 func promptPassword(s string) (string, error) {
 	fmt.Printf("%s: ", s)
 	fd := int(os.Stdin.Fd())
-	oldState, err := term.GetState(fd)
-	if err != nil {
-		// stdin is not a TTY — fall back to normal line input
-		var pwd string
-		_, err := fmt.Scanln(&pwd)
+
+	if !term.IsTerminal(fd) {
+		pwd, err := bufio.NewReader(os.Stdin).ReadString('\n')
 		if err != nil {
 			return "", err
 		}
-		return pwd, nil
-	}
-
-	// Put terminal in raw mode (echo off) for secure password entry.
-	if _, err := term.MakeRaw(fd); err != nil {
-		return "", fmt.Errorf("failed to set raw terminal mode: %w", err)
+		return strings.TrimRight(pwd, "\r\n"), nil
 	}
 
 	pwd, err := term.ReadPassword(fd)
-	// Restore terminal to its original state no matter what.
-	_ = term.Restore(fd, oldState)
 	fmt.Println()
-
 	if err != nil {
 		return "", err
 	}
