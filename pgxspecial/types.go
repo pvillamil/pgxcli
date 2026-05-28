@@ -28,6 +28,20 @@ type SpecialCommandRegistry struct {
 	CaseSensitive bool
 }
 
+type CommandExport struct {
+	Cmd         string
+	Syntax      string
+	Description string
+}
+
+func New(cmd, syntax, desc string) CommandExport {
+	return CommandExport{
+		Cmd:         cmd,
+		Syntax:      syntax,
+		Description: desc,
+	}
+}
+
 // SpecialCommandResult represents the result of a special command.
 type SpecialCommandResult any
 
@@ -108,4 +122,3 @@ type ExtensionVerboseResult struct {
 type ExtensionVerboseListResult struct {
 	Results []ExtensionVerboseResult
 }
-
