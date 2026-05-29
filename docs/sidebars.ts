@@ -30,6 +30,11 @@ const sidebars: SidebarsConfig = {
         'reference/environment-variables',
       ],
     },
+    {
+      type: 'doc',
+      id: 'thanks',
+      label: 'Thanks',
+    },
   ],
 };
 

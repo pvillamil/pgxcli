@@ -23,7 +23,7 @@ pgxcli automatically detects your terminal's color depth — TrueColor, 256-colo
 
 ## Autocompletion
 
-pgxcli offers word-based completion for SQL keywords. Press `Tab` to cycle through suggestions.
+pgxcli provides context-aware autocompletion for SQL queries. It automatically suggests SQL keywords, table names, and column names based on your current input. It also supports autocompletion for meta commands. Press `Tab` to cycle through suggestions.
 
 ![pgxcli autocompletion in action](/img/completion.gif)
 
@@ -43,5 +43,6 @@ pgxcli provides a modern and responsive user interface, including:
 - **Loading Spinner:** A visual spinner indicator that displays during query execution, letting you know your query is running.
 - **Orca Banner:** A colorful ASCII orca banner with gradient styling on startup.
 - **Issue Reporting:** A clickable link in the status bar to easily report issues on GitHub.
+- **Text Clamping:** Long query inputs are elegantly clamped to prevent rendering issues in your terminal.
 
 ---

@@ -32,6 +32,11 @@ Pick your operating system or preferred installation method:
     ```
 
     **Arch Linux**
+    You can install from the [AUR](https://aur.archlinux.org/packages/pgxcli):
+    ```bash
+    yay -S pgxcli
+    ```
+    Or manually install the downloaded package:
     ```bash
     sudo pacman -U pgxcli_*_linux_amd64.pkg.tar.zst
     ```
@@ -48,11 +53,11 @@ Pick your operating system or preferred installation method:
     **Manual Installation**
     ```bash
     # For Apple Silicon (M1/M2/M3)
-    tar -xzf pgxcli_0.2.0_darwin_arm64.tar.gz
+    tar -xzf pgxcli_0.3.0_darwin_arm64.tar.gz
     sudo mv pgxcli /usr/local/bin/
 
     # For Intel Mac
-    tar -xzf pgxcli_0.2.0_darwin_amd64.tar.gz
+    tar -xzf pgxcli_0.3.0_darwin_amd64.tar.gz
     sudo mv pgxcli /usr/local/bin/
     ```
   </TabItem>
@@ -70,6 +75,19 @@ Pick your operating system or preferred installation method:
 
     ```bash
     go install github.com/balajz/pgxcli/cmd/pgxcli@latest
+    ```
+  </TabItem>
+  <TabItem value="docker" label="Docker">
+    You can run pgxcli directly using Docker from GitHub Container Registry or Docker Hub:
+
+    **GitHub Container Registry (GHCR)**
+    ```bash
+    docker run -it --rm ghcr.io/balajz/pgxcli:v0.3.0 postgres://user:pass@host:5432/db
+    ```
+
+    **Docker Hub**
+    ```bash
+    docker run -it --rm balajz/pgxcli:v0.3.0 postgres://user:pass@host:5432/db
     ```
   </TabItem>
   <TabItem value="source" label="Source Code">

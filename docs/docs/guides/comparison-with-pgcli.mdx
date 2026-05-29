@@ -24,33 +24,26 @@ export const PythonLogo = () => <img src="https://s3.dualstack.us-east-2.amazona
 #### Now
 - **Single binary:** No external runtime dependencies (like Python).
 - **Performance:** Fast startup and better overall performance.
+- **Modern CLI Interface:** Enhanced user experience.
+- **Large Tables:** Performance improvement for larger tables.
 
 #### Planned
-- **Modern CLI Interface:** Enhanced user experience.
 - **Streaming query results:** Better handling of large tables.
 - **Browser-based Table view:** View results via localhost.
 - **Direct Table export:** Export to SQL INSERT, CSV, MD tables, Excel, and HTML.
 
----
 
-## Which one should I use?
-
-Right now, I would definitely choose pgcli. I think no explanation is needed.
-
-That could change as pgxcli matures. I would really appreciate if you give pgxcli a try and share your feedback. If you want to contribute, that would be even better.
-
----
 
 ## Feature Comparison Matrix
 
-| Category | Feature | pgcli (Python) | pgxcli (Go, v0.2.0) | Status |
+| Category | Feature | pgcli (Python) | pgxcli (Go, v0.3.0) | Status |
 |---|---|---|---|---|
 | **TL;DR** | **Overall** | **Feature-rich, mature** | **Fast, simple, single-binary** | **-** |
 | **SQL Editing** | Multi-line mode | <Check /> | <Check /> | Stable |
 | | External editor | <Check /> | <Check /> (Ctrl+E) | Stable |
-| | Vi/Emacs toggle | <Check /> | <OutOfScope /> | Out of scope |
 | **Completion** | Keyword completion | <Check /> | <Check /> | Stable |
-| | Schema-aware completion | <Check /> | <Wait /> | Roadmap v0.2.0 |
+| | Schema-aware completion | <Check /> | <Check /> | Stable v0.3.0 |
+| | Meta command completion | <Check /> | <Check /> | Stable v0.3.0 |
 | **Output** | Pager support | <Check /> | <Check /> | Stable |
 | | Table formatting | <Check /> | <Check /> | Stable |
 | | Colored output + themes | <Check /> | <Check /> | Stable |
@@ -58,6 +51,7 @@ That could change as pgxcli matures. I would really appreciate if you give pgxcl
 | **Commands** | Backslash meta-commands | <Check /> | <Check /> | Stable Expanding |
 | | Built-in commands | <Check /> | <Check /> (clear) | Expanding |
 | **History** | Persistent history | <Check /> | <Check /> | Stable |
+| | Search through history | <OutOfScope /> | <Check /> | Stable |
 | | History based completion | <Check /> | <Wait /> | Roadmap |
 | **Connection** | Standard flags | <Check /> | <Check /> | Stable |
 | | DSN/URI support | <Check /> | <Check /> | Stable |
@@ -82,7 +76,7 @@ That could change as pgxcli matures. I would really appreciate if you give pgxcl
 | **Language** | [Python](https://www.python.org/) | [Go](https://go.dev/) |
 | **Postgres Driver** | [psycopg](https://www.psycopg.org/) | [jackc/pgx](https://github.com/jackc/pgx) |
 | **CLI Framework** | [click](https://click.palletsprojects.com/) | [spf13/cobra](https://github.com/spf13/cobra) |
-| **Interactive Prompt** | [prompt-toolkit](https://python-prompt-toolkit.readthedocs.io/) | [jedib0t/go-prompter](https://github.com/jedib0t/go-prompter) |
+| **Interactive Prompt** | [prompt-toolkit](https://python-prompt-toolkit.readthedocs.io/) | [knz/bubbline](https://github.com/knz/bubbline) |
 | **Configuration** | [configobj](https://github.com/DiffSK/configobj) | [spf13/viper](https://github.com/spf13/viper) |
 | **SQL Parser** | [sqlparse](https://github.com/andialbrecht/sqlparse) | Custom Splitter |
 | **Tabular Output** | [tabulate](https://github.com/astanin/python-tabulate) | [olekukonko/tablewriter](https://github.com/olekukonko/tablewriter) |
