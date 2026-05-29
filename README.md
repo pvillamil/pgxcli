@@ -63,22 +63,15 @@ Highlights:
 #### Now 
 * Single binary, no external runtime dependencies
 * Fast startup and better performance
+* Modern CLI Interface
+* Performance improvements for large tables
 
 #### Planned
-* Modern CLI Interface
 * Streaming query results for large tables
 * Browser based Table view via localhost
-* Performance improvements for large tables
 * Direct Table export to SQL INSERT statements, CSV, MD tables, Excel, and HTML.
 
-<details>
-  <summary><strong>Which one should I use?</strong></summary>
 
-Right now, I would definitely choose pgcli. I think no explanation is needed.
-
-That could change as pgxcli matures. I would really appreciate if you give pgxcli a try and share your feedback. If you want to contribute, that would be even better.
-
-</details>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -105,6 +98,12 @@ sudo mv pgxcli /usr/local/bin/
 
 #### Windows
 Download the `.msi` or `.zip` from the [releases page][releases-url]. The installer will automatically add `pgxcli` to your `PATH`.
+
+#### Docker
+You can run `pgxcli` directly via Docker using the pre-built images:
+```bash
+docker run -it --rm ghcr.io/balajz/pgxcli:v0.3.0 postgres://user:pass@host:5432/db
+```
 
 #### Go Install
 If you have Go installed, you can install directly:
