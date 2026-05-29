@@ -35,6 +35,11 @@ const sidebars: SidebarsConfig = {
       id: 'thanks',
       label: 'Thanks',
     },
+    {
+      type: 'link',
+      label: 'Support',
+      href: '/support',
+    },
   ],
 };
 

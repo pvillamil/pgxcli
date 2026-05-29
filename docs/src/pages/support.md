@@ -1,53 +1,41 @@
 ---
-title: Support My Work
+title: Support
 description: Help keep pgxcli growing — star the repo, buy a coffee, or just spread the word.
 ---
 
 # Support My Work
 
-If you find pgxcli useful and want to help me keep improving it, your support means the world to me. Every little bit helps me learn, build, and deliver better tools for everyone.
+Hi, I'm Balaji! I'm a third-year computer science student who is curious about open-source and gradually becoming a part of it and building community, online & offline.
 
----
+`pgxcli` was completely written and tested out on this machine **Lenovo E325** 2012:
 
-## How You Can Help
+<img src="https://res.cloudinary.com/dsdupsv2g/image/upload/q_auto/f_auto/v1775325130/IMG_20260404_231326228_oat4th.jpg" alt="My setup"   style={{
+    borderRadius: '8px',
+    width: '100%',
+    maxHeight: '600px',
+  }} />
 
-### ⭐ Star on GitHub
+and specs:
 
-Show some love by starring the [pgxcli repo](https://github.com/balajz/pgxcli)!
-Every star gives me a huge dopamine hit and motivates me to build even better features.
+<img src="https://res.cloudinary.com/dsdupsv2g/image/upload/v1775319178/fastfetch_kgx4ct.png" alt="Specs" style={{ borderRadius: '8px' }} />
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/balajz/pgxcli?style=social)](https://github.com/balajz/pgxcli/stargazers)
+## Help Me Keep Building
 
----
+My first `Hello, World!` was on this machine. My first [open source contribution](https://github.com/knz/bubbline/pull/32) too.
 
-### ☕ Buy Me a Coffee
+The machine I'm on is a **Lenovo E325**, the ["amma laptop"](https://www.google.com/search?q=amma+laptop) as people call it here. My cousin lent it to me. He got it from a state government scheme for school students back in **2012**.
 
-Fuel my passion and keep development going! Even a small contribution keeps me motivated to create better features and fix issues quickly.
+It's slow. Keypresses have a noticeable delay. I can't keep more than 3 apps open. I close the browser just to open Neovim. The keyboard gave up, so I've been on an external one. Battery's gone, it lives plugged in. A lot of modern tools just won't run on it at all.
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FF813F?style=for-the-badge&logo=buy-me-a-coffee&logoColor=white)](https://ko-fi.com/balaji01)
+I've done what I can. Switched to **Linux** since Windows wouldn't boot, moved to **i3wm**, swapped everything heavy for something lighter. VS Code to **Neovim**, Chrome to **Brave**. Just keep finding ways to make it work.
 
----
+I've never brought this laptop to college. Honestly, out of embarrassment. I know that's on me. But that's just the truth.
 
-### 💳 Donate via PayPal
+Recently I registered for [Big Code 2026](https://rsvp.withgoogle.com/events/the-big-code-2026/home), a Google program I'm really looking forward to. It needs front camera access. My laptop doesn't have one. I just sat there and thought,
 
-Prefer PayPal?
+> *my true potential is being limited by this hardware.*
 
-[![PayPal](https://img.shields.io/badge/PayPal-003087?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.com/paypalme/BalajiJothi01)
+I want an **Apple M4 Pro**. I just want to open a project and not wonder if my machine can handle it.
 
-[![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/paypalme/BalajiJothi01)
 
----
-
-### 💡 Share & Spread the Word
-
-Love the project? Share it with your friends, colleagues, or on social media. Help grow the community and get more people using this tool!
-
----
-
-### 🐞 Report Issues & Give Feedback
-
-Found a bug or have ideas to improve? Your feedback is invaluable. [Open an issue](https://github.com/balajz/pgxcli/issues) on GitHub.
-
----
-
-Thank you so much for your trust and support — together, we can build something amazing! 🙌
+Thank you for your support ❤️
