@@ -10,7 +10,6 @@ import (
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"github.com/alecthomas/chroma/v2/quick"
-	"github.com/balajz/bubbline/computil"
 	"github.com/balajz/bubbline/editline"
 	"github.com/balajz/bubbline/history"
 	"github.com/muesli/termenv"
@@ -97,26 +96,6 @@ func postgresHighlighter(style string) func(string) string {
 			return s
 		}
 		return buf.String()
-	}
-}
-
-func postgresAutocomplete(pgKeywords []string) func(v [][]rune, line, col int) (string, editline.Completions) {
-	return func(v [][]rune, line, col int) (string, editline.Completions) {
-		word, wstart, wend := computil.FindWord(v, line, col)
-		if word == "" {
-			return "", nil
-		}
-		upperWord := strings.ToUpper(word)
-		var matches []string
-		for _, kw := range pgKeywords {
-			if strings.HasPrefix(kw, upperWord) {
-				matches = append(matches, kw)
-			}
-		}
-		if len(matches) == 0 {
-			return "", nil
-		}
-		return "", editline.SimpleWordsCompletion(matches, "Keywords", col, wstart, wend)
 	}
 }
 

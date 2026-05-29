@@ -14,6 +14,7 @@ import (
 
 const maxCompletions = 8
 
+//nolint:gocyclo
 func (p *pgxCLI) getCompletions() bubbline.AutoCompleteFn {
 	go func() {
 		err := p.client.Cache(p.compWorker)

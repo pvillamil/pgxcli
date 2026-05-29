@@ -10,7 +10,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-
 var (
 	ErrConnectionClosed         = errors.New("connection closed unexpectedly")
 	ErrConnectionNotEstablished = errors.New("connection not established")
@@ -141,7 +140,6 @@ func (e *executor) executeSpecial(ctx context.Context, cmd string) (pgxspecial.S
 
 	return normalizedRows, ok, nil
 }
-
 
 func (e *executor) cancel(ctx context.Context) error {
 	if e.conn == nil || e.conn.IsClosed() {
