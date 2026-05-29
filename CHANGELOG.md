@@ -7,6 +7,10 @@
 ### Added
 - **Context Aware Autocompletion**: pgxcli now provides context-aware autocompletion for SQL queries, including table names, column names, and SQL keywords.
 - **meta command autocompletion**: Added autocompletion for meta commands.
+- **Text clamping**: Added text clamping for long query inputs to prevent rendering issues.
+
+### Fixed
+- **Fixed error on no password**: Resolved password wrong message when no password is enter by user.
 
 ## [0.2.3] - 2026-05-24
 
