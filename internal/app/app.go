@@ -17,7 +17,6 @@ import (
 	"github.com/balajz/pgxcli/internal/cliio"
 	"github.com/balajz/pgxcli/internal/config"
 	"github.com/balajz/pgxcli/internal/database"
-	"github.com/balajz/pgxcli/internal/parser"
 	compDB "github.com/balajz/pgxls/pkg/database"
 )
 
@@ -70,53 +69,11 @@ func (p *pgxCLI) execute(ctx context.Context, query string) tea.Cmd {
 	}
 
 	return func() tea.Msg {
-		start := time.Now()
-		res, okay, err := p.client.ExecuteSpecial(ctx, query)
-		if err != nil {
-			p.logger.Error("error executing special command", "error", err)
-			return ui.ExecCmdMsg{Cmd: p.withPrompt(p.printError(err))}
-		}
-		if okay {
-			execTime := time.Since(start)
-			p.logger.Debug("special command executed", "result_type", fmt.Sprintf("%T", res))
-			return ui.ExecCmdMsg{Cmd: p.handleSpecialCommand(ctx, res, p.client, execTime)}
+		if msg, ok := p.runMeta(ctx, query); ok {
+			return msg
 		}
 
-		p.logger.Debug("executing query")
-		stmts := parser.SplitSQLStatements(query)
-		cmds := make([]tea.Cmd, 0, len(stmts))
-
-	StatementsLoop:
-		for _, stmt := range stmts {
-			p.logger.Debug("parsed statement", "statement", stmt)
-			if stmt == "" || stmt == ";" {
-				continue
-			}
-
-			start := time.Now()
-			queryResult, _, err := p.client.ExecuteQuery(ctx, stmt, false)
-			execDuration := time.Since(start)
-			if err != nil {
-				p.logger.Error("query execution failed", "error", err)
-				cmds = append(cmds, p.printError(err))
-				if p.config.Main.OnError == config.OnErrorStop {
-					break StatementsLoop
-				}
-				continue
-			}
-			resultCmd, err := p.handleQueryResult(queryResult, execDuration)
-			if err != nil {
-				p.logger.Error("error handling query result", "error", err)
-				cmds = append(cmds, p.printError(err))
-				if p.config.Main.OnError == config.OnErrorStop {
-					break StatementsLoop
-				}
-				continue
-			}
-			cmds = append(cmds, resultCmd)
-		}
-
-		return ui.ExecCmdMsg{Cmd: p.withPrompt(cmds...)}
+		return p.runQuery(ctx, query)
 	}
 }
 

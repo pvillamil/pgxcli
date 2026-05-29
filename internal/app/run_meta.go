@@ -16,6 +16,21 @@ import (
 	"github.com/balajz/pgxcli/pgxspecial"
 )
 
+func (p *pgxCLI) runMeta(ctx context.Context, query string) (tea.Msg, bool) {
+	start := time.Now()
+	res, okay, err := p.client.ExecuteSpecial(ctx, query)
+	if err != nil {
+		p.logger.Error("error executing special command", "error", err)
+		return ui.ExecCmdMsg{Cmd: p.withPrompt(p.printError(err))}, true
+	}
+	if okay {
+		execTime := time.Since(start)
+		p.logger.Debug("special command executed", "result_type", fmt.Sprintf("%T", res))
+		return ui.ExecCmdMsg{Cmd: p.handleSpecialCommand(ctx, res, p.client, execTime)}, true
+	}
+	return nil, false
+}
+
 func (p *pgxCLI) handleSpecialCommand(ctx context.Context, res pgxspecial.SpecialCommandResult, client *database.Client, execTime time.Duration) tea.Cmd {
 	timingInfo := fmt.Sprintf("Time %.3fs", execTime.Seconds())
 

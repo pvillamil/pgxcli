@@ -1,14 +1,56 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/balajz/pgxcli/internal/app/renderer"
+	"github.com/balajz/pgxcli/internal/app/ui"
+	"github.com/balajz/pgxcli/internal/config"
 	"github.com/balajz/pgxcli/internal/database"
+	"github.com/balajz/pgxcli/internal/parser"
 )
+
+func (p *pgxCLI) runQuery(ctx context.Context, query string) tea.Msg {
+	p.logger.Debug("executing query")
+	stmts := parser.SplitSQLStatements(query)
+	cmds := make([]tea.Cmd, 0, len(stmts))
+
+StatementsLoop:
+	for _, stmt := range stmts {
+		p.logger.Debug("parsed statement", "statement", stmt)
+		if stmt == "" || stmt == ";" {
+			continue
+		}
+
+		start := time.Now()
+		queryResult, _, err := p.client.ExecuteQuery(ctx, stmt, false)
+		execDuration := time.Since(start)
+		if err != nil {
+			p.logger.Error("query execution failed", "error", err)
+			cmds = append(cmds, p.printError(err))
+			if p.config.Main.OnError == config.OnErrorStop {
+				break StatementsLoop
+			}
+			continue
+		}
+		resultCmd, err := p.handleQueryResult(queryResult, execDuration)
+		if err != nil {
+			p.logger.Error("error handling query result", "error", err)
+			cmds = append(cmds, p.printError(err))
+			if p.config.Main.OnError == config.OnErrorStop {
+				break StatementsLoop
+			}
+			continue
+		}
+		cmds = append(cmds, resultCmd)
+	}
+
+	return ui.ExecCmdMsg{Cmd: p.withPrompt(cmds...)}
+}
 
 func (p *pgxCLI) handleQueryResult(r database.Rows, execDuration time.Duration) (cmd tea.Cmd, err error) {
 	var s strings.Builder
