@@ -106,7 +106,7 @@ docker run -it --rm ghcr.io/balajz/pgxcli:v0.3.0 postgres://user:pass@host:5432/
 #### Go Install
 If you have Go installed, you can install directly:
 ```bash
-go install github.com/balajz/pgxcli/cmd/pgxcli@latest
+go install github.com/balajz/pgxcli@latest
 ```
 
 For more details, see the [Installation Guide][install-ref].
