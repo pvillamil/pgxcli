@@ -23,7 +23,6 @@ import (
 )
 
 var (
-	printErr  = color.New(color.FgHiRed).FprintfFunc()
 	printInfo = color.New(color.FgWhite).FprintfFunc()
 	printTime = color.New(color.FgHiCyan).FprintfFunc()
 )
