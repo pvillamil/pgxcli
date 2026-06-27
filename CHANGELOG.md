@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.1]
 
 ### Added
 - **clean errors**: Use lipgloss for error formatting and styling, adding custom error packages (#96).
