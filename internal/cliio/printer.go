@@ -43,6 +43,7 @@ type Printer interface {
 	SetErrOut(errOut io.Writer)
 	SetPagerMode(mode string) error
 	Print(str string)
+	Println(str string)
 	PrintError(err error)
 	PrintTime(time time.Duration)
 	PrintViaPager(str string)
@@ -120,7 +121,11 @@ func (p *pgxPrinter) SetPagerMode(mode string) error {
 
 // Print writes regular output to the configured output stream.
 func (p *pgxPrinter) Print(str string) {
-	printInfo(p.out, str)
+	printInfo(p.out, Detail.Render(str))
+}
+
+func (p *pgxPrinter) Println(str string) {
+	printInfo(p.out, Detail.Render(str)+"\n")
 }
 
 // PrintError writes an error message to the configured error stream.
